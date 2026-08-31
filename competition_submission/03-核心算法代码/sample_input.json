@@ -1,0 +1,13 @@
+{
+  "sensor_id": "M01-WF2301-TRANS-STRESS-004",
+  "roof_stress": 32.8,
+  "separation": 24.5,
+  "subsidence": 31.2,
+  "support_resistance": 10850,
+  "anchor_load": 186,
+  "microseismic_energy": 1380,
+  "stress_growth_rate": 2.6,
+  "displacement_growth_rate": 3.1,
+  "spatial_coupling_index": 0.82,
+  "timestamp": "2026-08-22 08:40:00"
+}

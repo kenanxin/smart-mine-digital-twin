@@ -1,0 +1,14 @@
+{
+  "name": "smart-mine-v2-balanced",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "echarts": "^5.5.0",
+    "three": "^0.160.0"
+  }
+}

@@ -1,0 +1,15 @@
+export const EQUIPMENT_FOCUS_ZONES = Object.freeze({
+  'EQ-01': 'longwall',
+  'EQ-02': 'longwall',
+  'EQ-03': 'longwall',
+  'EQ-04': 'longwall',
+  'EQ-05': 'longwall',
+  'EQ-06': 'longwall',
+  'MON-01': 'longwall',
+  'MON-02': 'longwall',
+  'MON-03': 'longwall',
+  'MON-04': 'longwall',
+  'MON-05': 'longwall',
+  'MON-06': 'longwall',
+  'MON-07': 'longwall',
+});

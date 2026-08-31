@@ -1,0 +1,488 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智慧矿山数字孪生综合管控平台</title>
+<link rel="stylesheet" href="css/style.css">
+<!-- ECharts -->
+<script src="/node_modules/echarts/dist/echarts.min.js"></script>
+</head>
+<body>
+
+<!-- ============ 顶部标题栏 ============ -->
+<header class="header">
+  <div class="header-left">
+    <img src="images/logo.jpg" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+    <div class="header-title-group">
+      <h1 class="header-title">煤矿顶板灾变智能预警与可视化决策系统</h1>
+      <span class="header-subtitle">Digital Twin Roof Disaster Early Warning & Decision Platform</span>
+    </div>
+  </div>
+  <div class="header-center">
+    <div class="header-badge">多源融合 · 透明感知 · 三端协同</div>
+  </div>
+  <div class="header-right">
+    <div class="header-datetime" id="datetime">--</div>
+    <div class="header-status">
+      <span class="status-dot online"></span> 系统运行中
+    </div>
+  </div>
+</header>
+
+<!-- ============ 三端门户切换 ============ -->
+<nav class="portal-switch" id="portalSwitch" aria-label="三端门户切换">
+  <button class="portal-btn active" data-portal="enterprise">企业端</button>
+  <button class="portal-btn" data-portal="regulator">监管端</button>
+  <button class="portal-btn" data-portal="expert">智库端</button>
+</nav>
+
+<!-- ============ 顶板灾变演示工具栏 ============ -->
+<div class="disaster-toolbar" id="disasterPanel">
+  <!-- JS 动态渲染 -->
+</div>
+
+<!-- ============ 主体布局 ============ -->
+<div class="main-container">
+
+  <!-- 左侧面板 -->
+  <aside class="panel panel-left">
+
+    <!-- 设备状态 -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-icon">⚙️</span>
+        <span class="card-title">设备运行状态</span>
+        <span class="equipment-total" id="equipmentTotal">共 12 套</span>
+      </div>
+      <div class="card-body">
+        <div class="status-grid">
+          <div class="status-item running">
+            <div class="status-num" id="equipmentRunning">10</div>
+            <div class="status-label">运行中</div>
+          </div>
+          <div class="status-item fault">
+            <div class="status-num" id="equipmentFault">0</div>
+            <div class="status-label">故障</div>
+          </div>
+          <div class="status-item maintain">
+            <div class="status-num" id="equipmentMaintain">2</div>
+            <div class="status-label">维护中</div>
+          </div>
+          <div class="status-item offline">
+            <div class="status-num" id="equipmentOffline">0</div>
+            <div class="status-label">离线</div>
+          </div>
+        </div>
+        <div class="equip-list" id="equipList"></div>
+      </div>
+    </section>
+
+    <!-- 顶板核心监测 -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-icon">⌁</span>
+        <span class="card-title">顶板灾变核心监测</span>
+      </div>
+      <div class="card-body">
+        <div class="env-grid">
+          <div class="env-item">
+            <span class="env-label">顶板压力</span>
+            <span class="env-value warn" id="roofPressure">33.0 MPa</span>
+            <span class="env-bar"><i style="width:82%"></i></span>
+          </div>
+          <div class="env-item">
+            <span class="env-label">顶板离层量</span>
+            <span class="env-value danger" id="roofSeparation">40.0 mm</span>
+            <span class="env-bar"><i style="width:88%"></i></span>
+          </div>
+          <div class="env-item">
+            <span class="env-label">顶板下沉量</span>
+            <span class="env-value warn" id="roofSubsidence">31.2 mm</span>
+            <span class="env-bar"><i style="width:76%"></i></span>
+          </div>
+          <div class="env-item">
+            <span class="env-label">支架工作阻力</span>
+            <span class="env-value danger" id="supportResistance">11800 kN</span>
+            <span class="env-bar"><i style="width:91%"></i></span>
+          </div>
+          <div class="env-item">
+            <span class="env-label">锚索载荷</span>
+            <span class="env-value warn" id="anchorLoad">186 kN</span>
+            <span class="env-bar"><i style="width:70%"></i></span>
+          </div>
+          <div class="env-item">
+            <span class="env-label">微震能量</span>
+            <span class="env-value danger" id="microseismicEnergy">1850 J</span>
+            <span class="env-bar"><i style="width:78%"></i></span>
+          </div>
+        </div>
+        <div class="simulation-note" id="simulationNote">比赛演示模拟阈值，非生产安全标准</div>
+        <div class="env-chart-wrap" id="envChart"></div>
+      </div>
+    </section>
+  </aside>
+
+  <!-- 中间3D场景 -->
+  <main class="panel panel-center" id="threeContainer">
+    <div class="scene-overlay-top">
+      <span class="scene-tag">数字孪生 · 实时渲染</span>
+    </div>
+    <div class="roof-field-panel" id="roofFieldControls">
+      <div class="roof-field-head">
+        <span id="roofFieldLegendTitle">综合风险场</span>
+        <em id="roofFieldLegendRange">0 → 100</em>
+      </div>
+      <div class="roof-field-modes">
+        <button data-field-mode="stress">应力场</button>
+        <button data-field-mode="displacement">位移场</button>
+        <button class="active" data-field-mode="risk">综合风险场</button>
+      </div>
+      <div class="roof-field-scale">
+        <i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div class="roof-field-scale-labels">
+        <span>低</span><span>中</span><span>高</span>
+      </div>
+      <div class="roof-field-method">监测点插值：IDW + Gaussian 衰减</div>
+    </div>
+    <div class="roof-warning-card" id="roofWarningCard">
+      <div class="roof-warning-top">
+        <span id="roofWarningStage">顶板垮落预警</span>
+        <em id="roofWarningLevel">红色预警</em>
+      </div>
+      <div class="roof-warning-score">
+        <b id="roofWarningScore">92</b>
+        <span>顶板综合风险指数</span>
+      </div>
+      <div class="roof-warning-grid">
+        <p><i>触发指标</i><strong id="roofWarningTrigger">顶板离层量、支架工作阻力、微震能量</strong></p>
+        <p><i>处置建议</i><strong id="roofWarningAdvice">离层量、支架阻力和微震能量多源耦合异常，立即执行红色预警处置。</strong></p>
+      </div>
+    </div>
+    <!-- 地上/地下切换按钮 -->
+    <div class="view-toggle" id="viewToggle">
+      <button class="view-btn" data-view="surface">地表</button>
+      <button class="view-btn active" data-view="underground">井下</button>
+    </div>
+    <div class="scene-overlay-bottom">
+      <div class="scene-legend">
+        <span><i style="background:#ffb800"></i> 采煤机</span>
+        <span><i style="background:#448aff"></i> 液压支架</span>
+        <span><i style="background:#889999"></i> 刮板输送机</span>
+        <span><i style="background:#161616"></i> 煤层</span>
+        <span><i style="background:#ff4444"></i> 采空区</span>
+      </div>
+    </div>
+    <div class="scene-tips">
+      🖱️ 左键旋转 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b style="color:#00d4ff">右键→平移模式</b>
+    </div>
+  </main>
+
+  <!-- 右侧面板 -->
+  <aside class="panel panel-right">
+
+    <!-- 风险态势 -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-icon">▣</span>
+        <span class="card-title">顶板风险态势</span>
+      </div>
+      <div class="card-body">
+        <div class="prod-chart-wrap" id="prodChart"></div>
+        <div class="prod-stats">
+          <div class="prod-stat">
+            <div class="prod-num danger" id="riskScore">92</div>
+            <div class="prod-unit">综合风险分值</div>
+          </div>
+          <div class="prod-stat">
+            <div class="prod-num" id="monitorCount">12<span>个</span></div>
+            <div class="prod-unit">在线监测点</div>
+          </div>
+          <div class="prod-stat">
+            <div class="prod-num" id="dataCompleteness">100<span>%</span></div>
+            <div class="prod-unit">数据完整率</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 安全预警 -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-icon">🛡️</span>
+        <span class="card-title">安全预警中心</span>
+        <span class="card-badge safe">无重大风险</span>
+      </div>
+      <div class="card-body">
+        <div class="alert-chart-wrap" id="alertChart"></div>
+        <div class="alert-list" id="alertList"></div>
+      </div>
+    </section>
+
+    <!-- 三端闭环 -->
+    <section class="card closed-loop-card">
+      <div class="card-header">
+        <span class="card-icon">◎</span>
+        <span class="card-title">三端协同闭环</span>
+        <span class="card-badge warn" id="enterpriseLoopStatus">处置中</span>
+      </div>
+      <div class="card-body">
+        <div class="closed-loop-summary">
+          <p><span>事件编号</span><b id="enterpriseLoopEvent">EVT-1206-20260822-001</b></p>
+          <p><span>当前环节</span><b id="enterpriseLoopStep">企业端现场处置</b></p>
+          <p><span>闭环进度</span><b id="enterpriseLoopProgress">83%</b></p>
+        </div>
+        <div class="closed-loop-track" id="enterpriseLoopTrack"></div>
+        <div class="closed-loop-note" id="enterpriseLoopNext">上传现场处置凭证并持续回传传感器趋势</div>
+        <div class="closed-loop-actions">
+          <button class="loop-action-btn primary" data-loop-action="advance">提交处置反馈</button>
+          <button class="loop-action-btn" data-loop-action="reset">重置闭环</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 顶板灾变智能决策 -->
+    <section class="card decision-card">
+      <div class="card-header">
+        <span class="card-icon">🧠</span>
+        <span class="card-title">智能决策建议</span>
+        <span class="decision-badge safe" id="decisionBadge">巡检</span>
+      </div>
+      <div class="card-body">
+        <div class="decision-panel" id="decisionPanel">
+          <div class="decision-stage">
+            <strong>正常监测</strong>
+            <span>风险分 --</span>
+          </div>
+          <div class="decision-grid">
+            <div class="decision-item">
+              <div class="decision-label">判定依据</div>
+              <div class="decision-text">顶板压力、离层量、支架工作阻力处于稳定区间。</div>
+            </div>
+            <div class="decision-item">
+              <div class="decision-label">处置建议</div>
+              <div class="decision-text">保持自动巡检，持续观察运输顺槽顶板监测点变化。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<!-- ============ 监管端门户 ============ -->
+<section class="portal-screen regulator-screen" id="regulatorPortal">
+  <div class="portal-hero regulator">
+    <div>
+      <span class="portal-kicker">监管端 · 区域安全态势</span>
+      <h2>顶板灾变风险远程监管驾驶舱</h2>
+      <p>面向监管部门汇聚多矿井风险状态、预警闭环和处置进度，支持跨矿区分级督办。</p>
+    </div>
+    <div class="portal-score danger">
+      <b>2</b>
+      <span>重点督办矿井</span>
+    </div>
+  </div>
+
+  <div class="portal-grid regulator-grid">
+    <section class="portal-card wide">
+      <div class="portal-card-head">
+        <strong>区域矿井风险总览</strong>
+        <span>6 座矿井在线</span>
+      </div>
+      <div class="mine-risk-list">
+        <div class="mine-risk-row danger"><span>1206 工作面</span><b>92</b><em>红色预警</em><i style="width:92%"></i></div>
+        <div class="mine-risk-row warn"><span>青龙煤矿 303 盘区</span><b>76</b><em>橙色预警</em><i style="width:76%"></i></div>
+        <div class="mine-risk-row watch"><span>东翼运输顺槽</span><b>58</b><em>黄色关注</em><i style="width:58%"></i></div>
+        <div class="mine-risk-row safe"><span>南翼回风巷</span><b>36</b><em>正常巡检</em><i style="width:36%"></i></div>
+        <div class="mine-risk-row safe"><span>北一采区辅运巷</span><b>31</b><em>正常巡检</em><i style="width:31%"></i></div>
+        <div class="mine-risk-row safe"><span>西翼轨道大巷</span><b>28</b><em>正常巡检</em><i style="width:28%"></i></div>
+      </div>
+    </section>
+
+    <section class="portal-card">
+      <div class="portal-card-head">
+        <strong>预警闭环</strong>
+        <span id="regulatorLoopEvent">EVT-1206-20260822-001</span>
+      </div>
+      <div class="closure-ring">
+        <b id="regulatorLoopProgress">83%</b>
+        <span>处置闭环率</span>
+      </div>
+      <div class="portal-metrics compact">
+        <p><span>当前环节</span><b id="regulatorLoopStep">现场处置</b></p>
+        <p><span>负责端</span><b id="regulatorLoopOwner">企业端</b></p>
+        <p><span>监管状态</span><b id="regulatorLoopStatus">督办中</b></p>
+      </div>
+    </section>
+
+    <section class="portal-card">
+      <div class="portal-card-head">
+        <strong>预警事件队列</strong>
+        <span id="regulatorEventCount">读取中</span>
+      </div>
+      <div class="event-queue" id="regulatorEventQueue">
+        <button class="event-queue-item active">
+          <span>EVT-1206-20260822-001</span>
+          <b>1206 工作面</b>
+          <em>红色预警 · 92</em>
+        </button>
+      </div>
+    </section>
+
+    <section class="portal-card">
+      <div class="portal-card-head">
+        <strong>监管督办</strong>
+        <span id="regulatorAdviceStatus">自动生成</span>
+      </div>
+      <div class="supervision-list" id="regulatorSupervisionList">
+        <p><b>红色预警</b><span>要求企业端立即上传撤人、停机和封控反馈。</span></p>
+        <p><b>橙色预警</b><span>督促复核支架初撑力，提交现场巡查记录。</span></p>
+        <p><b>黄色关注</b><span>提高采样频率，持续观察离层和微震趋势。</span></p>
+      </div>
+      <div class="closed-loop-actions portal-actions">
+        <button class="loop-action-btn primary" data-loop-action="advance">监管复核通过</button>
+        <button class="loop-action-btn" data-loop-action="archive">直接闭环归档</button>
+      </div>
+      <div class="action-timeline" id="regulatorActionTimeline">
+        <p><b>已建档</b><span>事件进入三端共享闭环。</span></p>
+        <p><b>督办中</b><span>等待企业端上传处置反馈。</span></p>
+      </div>
+    </section>
+
+    <section class="portal-card wide">
+      <div class="portal-card-head">
+        <strong>三端闭环链路</strong>
+        <span>统一接口接入</span>
+      </div>
+      <div class="flow-steps closed-loop-flow" id="regulatorLoopFlow">
+        <span>企业端识别</span>
+        <i></i>
+        <span>现场处置</span>
+        <i></i>
+        <span>监管督办</span>
+        <i></i>
+        <span>闭环归档</span>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- ============ 智库端门户 ============ -->
+<section class="portal-screen expert-screen" id="expertPortal">
+  <div class="portal-hero expert">
+    <div>
+      <span class="portal-kicker">智库端 · 模型研判</span>
+      <h2>顶板灾变智能预警模型解释平台</h2>
+      <p>面向专家组和算法团队展示多源指标融合、阈值配置、贡献因子和判别依据。</p>
+    </div>
+    <div class="portal-score">
+      <b>0.87</b>
+      <span>模型置信度</span>
+    </div>
+  </div>
+
+  <div class="portal-grid expert-grid">
+    <section class="portal-card">
+      <div class="portal-card-head">
+        <strong>多源输入</strong>
+        <span>模拟接口验证</span>
+      </div>
+      <div class="factor-list">
+        <p><span>顶板压力</span><b>33.0 MPa</b><i style="width:82%"></i></p>
+        <p><span>顶板离层量</span><b>40.0 mm</b><i style="width:88%"></i></p>
+        <p><span>支架阻力</span><b>11800 kN</b><i style="width:91%"></i></p>
+        <p><span>微震能量</span><b>1850 J</b><i style="width:78%"></i></p>
+      </div>
+    </section>
+
+    <section class="portal-card">
+      <div class="portal-card-head">
+        <strong>融合权重</strong>
+        <span>算法组方案</span>
+      </div>
+      <div class="weight-stack">
+        <div style="--w:36%"><span>应力扰动</span><b>36%</b></div>
+        <div style="--w:28%"><span>位移离层</span><b>28%</b></div>
+        <div style="--w:22%"><span>支护状态</span><b>22%</b></div>
+        <div style="--w:14%"><span>微震能量</span><b>14%</b></div>
+      </div>
+    </section>
+
+    <section class="portal-card wide">
+      <div class="portal-card-head">
+        <strong>判别依据</strong>
+        <span id="expertLoopEvent">当前输出：红色预警</span>
+      </div>
+      <div class="model-explain">
+        <p><b>规则层</b><span id="expertRuleLayer">离层量、支架阻力和微震能量均超过预警阈值，触发 L1 快速告警。</span></p>
+        <p><b>融合层</b><span id="expertFusionLayer">应力场与位移场热点在工作面出口叠加，综合风险指数升至 92。</span></p>
+        <p><b>闭环层</b><span id="expertLoopLayer">向监管端同步贡献因子与阈值解释。</span></p>
+      </div>
+    </section>
+
+    <section class="portal-card wide">
+      <div class="portal-card-head">
+        <strong>模型证据链</strong>
+        <span id="expertSummaryStatus">同一事件追溯</span>
+      </div>
+      <div class="evidence-chain" id="expertEvidenceChain">
+        <p><b>触发指标</b><span>离层量、支架阻力、微震能量</span></p>
+        <p><b>贡献因子</b><span>应力 36%，位移 28%，支护 22%，微震 14%</span></p>
+        <p><b>处置链路</b><span>企业端识别 → 现场处置 → 监管督办 → 模型复核 → 闭环归档</span></p>
+      </div>
+      <div class="replay-summary" id="expertReplaySummary">
+        <strong>事件复盘摘要</strong>
+        <p>当前事件处于企业端现场处置阶段，智库端已完成风险贡献解释，等待三端闭环归档。</p>
+      </div>
+    </section>
+
+    <section class="portal-card wide">
+      <div class="portal-card-head">
+        <strong>模型服务接口</strong>
+        <span id="apiStatusText">接口状态读取中</span>
+      </div>
+      <div class="api-status-grid">
+        <p><span>接口版本</span><b id="apiVersion">RoofRisk API v1</b></p>
+        <p><span>数据源</span><b id="apiDataSource">标准化模拟多源数据</b></p>
+        <p><span>当前事件</span><b id="apiEventId">EVT-1206-20260822-001</b></p>
+        <p><span>当前工作面</span><b id="apiFaceId">1206</b></p>
+      </div>
+      <div class="api-table">
+        <p><span>GET /api/roof-risk/current</span><b>当前多源风险态势</b></p>
+        <p><span>POST /api/roof-risk/evaluate</span><b>多源指标融合评估</b></p>
+        <p><span>GET /api/roof-risk/history</span><b>历史风险趋势查询</b></p>
+        <p><span>GET /api/roof-risk/explain</span><b>输出贡献因子与判别说明</b></p>
+        <p><span>GET /api/roof-risk/events</span><b>三端预警闭环事件</b></p>
+        <p><span>POST /api/roof-risk/select</span><b>切换三端当前事件</b></p>
+        <p><span>POST /api/roof-risk/closed-loop/advance</span><b>闭环状态推进</b></p>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- ============ 底部信息栏 ============ -->
+<footer class="footer">
+  <div class="footer-info">
+    <span>煤矿顶板灾变智能预警与可视化决策系统</span>
+    <span class="footer-sep">|</span>
+    <span>数字孪生可视化决策平台</span>
+    <span class="footer-sep">|</span>
+    <span>RoofRisk API v1 多源融合接口</span>
+  </div>
+</footer>
+
+<!-- ============ Three.js Import Map (local dependency for offline demo stability) ============ -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "/node_modules/three/build/three.module.js",
+    "three/addons/": "/node_modules/three/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
