@@ -356,12 +356,18 @@ body.portal-expert .footer {
   min-height: 0;
 }
 .expert-grid {
-  grid-template-columns: 1fr 1fr;
-  align-items: start;
-  grid-auto-rows: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
 }
 .expert-grid .portal-card:not(.wide) {
+  flex: 1 1 calc(50% - 8px);
   min-height: 258px;
+}
+.expert-grid .portal-card.wide {
+  flex: 1 1 100%;
+  width: 100%;
 }
 .portal-card {
   min-height: 210px;
