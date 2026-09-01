@@ -6,12 +6,12 @@
 - 线上地址：`https://smart-mine-v2-balanced.onrender.com/`
 - Render 服务：`smart-mine-v2-balanced`
 - GitHub 仓库：`kenanxin/smart-mine-digital-twin`
-- 验收提交：`ba60254 Connect roof risk algorithm bridge`
+- 验收提交：`f81d039 Stabilize Render scene loading and document online QA`
 - 验收时间：2026-09-01
 
 ## 部署状态
 
-- Render 已手动部署最新提交 `ba60254`。
+- Render 已手动部署最新提交 `f81d039`。
 - 构建状态：Deploy succeeded / Live。
 - 启动命令：`npm start`。
 - 服务日志显示 Node 服务已监听 Render 分配端口。
@@ -58,7 +58,7 @@ algorithm.model_path = competition_submission/03-核心算法代码/roof_risk_mo
 - 若浏览器仍显示旧值，可使用带版本参数的入口，例如：
 
 ```text
-https://smart-mine-v2-balanced.onrender.com/?scene=v2&view=underground&field=risk&portal=enterprise&rev=ba60254
+https://smart-mine-v2-balanced.onrender.com/?scene=v2&view=underground&field=risk&portal=enterprise&rev=f81d039
 ```
 
 ## 结论
