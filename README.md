@@ -2,7 +2,7 @@
 
 本项目面向“基于数字孪生的煤矿顶板灾变智能预警与可视化决策系统”比赛题目，提供本地运行的三维数字孪生展示平台、三端协同管控页面和 RoofRisk API v1 多源风险接口。
 
-当前版本采用标准化模拟多源数据驱动平台展示，并通过 `tools/roof-risk-bridge.py` 调用 `competition_submission/03-核心算法代码/roof_risk_model.py`，把算法输出的风险分值、等级、阶段、贡献因子和处置建议接入企业端、监管端和智库端。
+当前版本采用标准化模拟多源数据驱动平台展示，并通过 `tools/roof-risk-bridge.py` 调用 `competition_submission/03-核心算法代码/roof_risk_model.py`，把算法组 XGBoost 四级预警结果、风险概率、8 维输入特征、预警等级、处置建议和六 Agent 闭环摘要接入企业端、监管端和智库端。
 
 ## 主要功能
 
@@ -11,7 +11,7 @@
 - 六阶段灾变演示：覆盖正常监测、应力集中、离层扩展、支护异常、垮落预警、应急处置。
 - 三端协同闭环：企业端负责现场监测与处置，监管端负责区域态势和闭环督办，智库端负责模型解释和复盘。
 - 统一接口：RoofRisk API v1 统一多源指标、综合风险、模型解释、预警事件和闭环状态。
-- 算法桥接：内置平台联调用算法示例，并通过 RoofRisk API v1 接入三端页面；真实算法可按相同输入输出合同替换。
+- 算法接入：平台已按算法组 XGBoost 四级预警输出适配 RoofRisk API v1；真实模型服务可按相同输入输出合同替换。
 
 ## 本地运行
 
@@ -27,13 +27,15 @@ node server.js
 http://localhost:8092/
 ```
 
-默认进入企业端井下综合风险场：
+三维主展示入口：
 
 ```text
-http://localhost:8092/?scene=v2&view=underground&field=risk&portal=enterprise
+http://localhost:8092/?scene=v2&view=underground&field=risk
 ```
 
 ## 三端入口
+
+三端入口用于展示企业端、监管端、智库端的业务闭环面板。其中企业端保留三维主画布和处置面板，监管端、智库端进入业务专题面板。
 
 ```text
 企业端：http://localhost:8092/?scene=v2&view=underground&field=risk&portal=enterprise
