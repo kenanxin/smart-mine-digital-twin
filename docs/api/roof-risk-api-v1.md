@@ -41,7 +41,10 @@ GET /api/roof-risk/current
     "subsidence": { "value": 31.2, "unit": "mm", "status": "warning" },
     "support_resistance": { "value": 11800, "unit": "kN", "status": "danger" },
     "anchor_load": { "value": 186, "unit": "kN", "status": "warning" },
-    "microseismic_energy": { "value": 1850, "unit": "J", "status": "danger" }
+    "microseismic_energy": { "value": 1850, "unit": "J", "status": "danger" },
+    "water_inflow": { "value": 36.0, "unit": "m3/h", "status": "warning" },
+    "distance_to_water": { "value": 18.0, "unit": "m", "status": "danger" },
+    "data_quality": { "value": "正常", "unit": "", "status": "safe" }
   },
   "risk": {
     "score": 89.26,
@@ -63,11 +66,31 @@ GET /api/roof-risk/current
   },
   "algorithm": {
     "source": "local_python_bridge",
-    "source_label": "本地算法桥接",
+    "source_label": "算法组 XGBoost 预警模型",
     "model_path": "competition_submission/03-核心算法代码/roof_risk_model.py",
+    "best_model": "xgboost",
+    "model_family": "XGBoost 顶板灾变四级预警模型",
+    "model_accuracy": 0.99325,
+    "predicted_class": "重大风险",
+    "warning_level": "红色预警 (紧急撤离)",
+    "max_probability": 0.999017,
+    "probabilities": {
+      "低风险": 0.000044,
+      "一般风险": 0.000078,
+      "较大风险": 0.000861,
+      "重大风险": 0.999017
+    },
     "risk_score": 89.26,
     "risk_level": "red",
     "stage": "顶板垮落预警",
+    "agent_workflow": [
+      { "agent_id": "A1", "name": "感知预警 Agent", "status": "success" },
+      { "agent_id": "A2", "name": "知识检索 Agent", "status": "success" },
+      { "agent_id": "A3", "name": "调度决策 Agent", "status": "success" },
+      { "agent_id": "A5", "name": "资源评估 Agent", "status": "success" },
+      { "agent_id": "A4", "name": "协同管控 Agent", "status": "waiting_human" },
+      { "agent_id": "A6", "name": "反思迭代 Agent", "status": "partial" }
+    ],
     "actions": ["立即停机撤人", "封控高风险区域", "执行补强支护和持续监测"]
   }
 }
@@ -89,6 +112,9 @@ GET /api/roof-risk/current
 | metrics.support_resistance | object | 支架工作阻力，单位 kN |
 | metrics.anchor_load | object | 锚索载荷，单位 kN |
 | metrics.microseismic_energy | object | 微震能量，单位 J |
+| metrics.water_inflow | object | 涌水量，单位 m3/h |
+| metrics.distance_to_water | object | 距水体/岩溶体距离，单位 m |
+| metrics.data_quality | object | 数据质量标记 |
 | risk.score | number | 综合风险分值，范围 0-100 |
 | risk.level | string | 风险等级：green、attention、yellow、orange、red |
 | risk.stage | string | 灾变阶段 |
@@ -101,6 +127,15 @@ GET /api/roof-risk/current
 | algorithm.source | string | 算法来源标识 |
 | algorithm.source_label | string | 页面展示用算法来源 |
 | algorithm.model_path | string | 实际调用的算法文件 |
+| algorithm.best_model | string | 算法组最佳模型，当前为 xgboost |
+| algorithm.model_family | string | 模型族名称 |
+| algorithm.model_accuracy | number | 算法组离线评估准确率 |
+| algorithm.predicted_class | string | 算法组四级风险分类结果 |
+| algorithm.warning_level | string | 算法组预警等级 |
+| algorithm.max_probability | number | 最大类别概率，即模型置信度 |
+| algorithm.probabilities | object | 四级风险概率 |
+| algorithm.input_features | object | 算法组 8 维输入特征 |
+| algorithm.agent_workflow | array | 六 Agent 预警闭环执行摘要 |
 | algorithm.risk_score | number | 算法输出风险分值 |
 | algorithm.risk_level | string | 算法输出风险等级 |
 | algorithm.stage | string | 算法输出阶段 |

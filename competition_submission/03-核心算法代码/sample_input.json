@@ -1,13 +1,12 @@
 {
-  "sensor_id": "M01-WF2301-TRANS-STRESS-004",
-  "roof_stress": 32.8,
-  "separation": 24.5,
-  "subsidence": 31.2,
-  "support_resistance": 10850,
-  "anchor_load": 186,
-  "microseismic_energy": 1380,
-  "stress_growth_rate": 2.6,
-  "displacement_growth_rate": 3.1,
-  "spatial_coupling_index": 0.82,
-  "timestamp": "2026-08-22 08:40:00"
+  "sensor_id": "M01-WF1206-FUSION-008",
+  "roof_separation_rate": 40.0,
+  "bolt_axial_force_inc": 36.0,
+  "cable_axial_force_inc": 50.0,
+  "support_resistance": 11.8,
+  "water_inflow": 36.0,
+  "microseismic_energy": 1850.0,
+  "distance_to_water": 18.0,
+  "data_quality": "正常",
+  "timestamp": "2026-08-22 09:30:00"
 }

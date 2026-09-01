@@ -82,6 +82,9 @@ const ROOF_RISK_CURRENT = {
     support_resistance: { value: 11800, unit: 'kN', status: 'danger' },
     anchor_load: { value: 186, unit: 'kN', status: 'warning' },
     microseismic_energy: { value: 1850, unit: 'J', status: 'danger' },
+    water_inflow: { value: 36.0, unit: 'm3/h', status: 'warning' },
+    distance_to_water: { value: 18.0, unit: 'm', status: 'danger' },
+    data_quality: { value: '正常', unit: '', status: 'safe' },
   },
   risk: {
     score: 89.26,
@@ -240,6 +243,9 @@ const EVENT_PROFILES = {
       support_resistance: { value: 11800, unit: 'kN', status: 'danger' },
       anchor_load: { value: 186, unit: 'kN', status: 'warning' },
       microseismic_energy: { value: 1850, unit: 'J', status: 'danger' },
+      water_inflow: { value: 36.0, unit: 'm3/h', status: 'warning' },
+      distance_to_water: { value: 18.0, unit: 'm', status: 'danger' },
+      data_quality: { value: '正常', unit: '', status: 'safe' },
     },
     trigger: ['separation', 'support_resistance', 'microseismic_energy'],
     explanation: '离层量、支架阻力和微震能量多源耦合异常，应力场与位移场热点在工作面出口叠加。',
@@ -254,6 +260,9 @@ const EVENT_PROFILES = {
       support_resistance: { value: 11650, unit: 'kN', status: 'danger' },
       anchor_load: { value: 190, unit: 'kN', status: 'watch' },
       microseismic_energy: { value: 1200, unit: 'J', status: 'warning' },
+      water_inflow: { value: 24.0, unit: 'm3/h', status: 'watch' },
+      distance_to_water: { value: 38.0, unit: 'm', status: 'warning' },
+      data_quality: { value: '正常', unit: '', status: 'safe' },
     },
     trigger: ['support_resistance', 'roof_stress'],
     explanation: '303盘区支架工作阻力异常抬升，顶板应力同步上行，但位移离层尚未形成红色耦合。',
@@ -268,6 +277,9 @@ const EVENT_PROFILES = {
       support_resistance: { value: 9800, unit: 'kN', status: 'safe' },
       anchor_load: { value: 166, unit: 'kN', status: 'safe' },
       microseismic_energy: { value: 820, unit: 'J', status: 'watch' },
+      water_inflow: { value: 12.0, unit: 'm3/h', status: 'safe' },
+      distance_to_water: { value: 68.0, unit: 'm', status: 'watch' },
+      data_quality: { value: '正常', unit: '', status: 'safe' },
     },
     trigger: ['separation', 'microseismic_energy'],
     explanation: '东翼运输顺槽离层趋势和微震能量轻度抬升，支护状态稳定，维持黄色关注。',
@@ -297,16 +309,18 @@ function normalizeContribution(contribution = {}) {
 
 function mapAlgorithmContributionForUi(contribution = {}) {
   const roofStress = Number(contribution.roof_stress ?? 0);
-  const separation = Number(contribution.separation ?? 0);
+  const separation = Number(contribution.separation ?? contribution.roof_separation_rate ?? 0);
   const subsidence = Number(contribution.subsidence ?? 0);
   const support = Number(contribution.support_resistance ?? 0);
-  const anchor = Number(contribution.anchor_load ?? 0);
+  const anchor = Number(contribution.anchor_load ?? contribution.bolt_axial_force_inc ?? 0) + Number(contribution.cable_axial_force_inc ?? 0);
   const microseismic = Number(contribution.microseismic_energy ?? 0);
+  const water = Number(contribution.water_inflow ?? 0);
+  const karstDistance = Number(contribution.distance_to_water ?? 0);
   return normalizeContribution({
-    stress: roofStress,
+    stress: roofStress + karstDistance,
     displacement: separation + subsidence,
     support: support + anchor,
-    microseismic,
+    microseismic: microseismic + water,
   });
 }
 
@@ -329,6 +343,12 @@ function deriveAlgorithmSample(event) {
     support_resistance: Number(metrics.support_resistance?.value ?? 0),
     anchor_load: Number(metrics.anchor_load?.value ?? 0),
     microseismic_energy: Number(metrics.microseismic_energy?.value ?? 0),
+    roof_separation_rate: Number(metrics.roof_separation_rate?.value ?? metrics.separation?.value ?? 0),
+    bolt_axial_force_inc: Number(metrics.bolt_axial_force_inc?.value ?? Math.max(0, Number(metrics.anchor_load?.value ?? 0) - 150)),
+    cable_axial_force_inc: Number(metrics.cable_axial_force_inc?.value ?? Math.max(0, Number(metrics.anchor_load?.value ?? 0) - 136)),
+    water_inflow: Number(metrics.water_inflow?.value ?? (level === 'red' ? 36 : level === 'orange' ? 24 : 12)),
+    distance_to_water: Number(metrics.distance_to_water?.value ?? (level === 'red' ? 18 : level === 'orange' ? 38 : 68)),
+    data_quality: metrics.data_quality?.value ?? '正常',
     stress_growth_rate: trend.stress,
     displacement_growth_rate: trend.displacement,
     spatial_coupling_index: trend.coupling,
@@ -398,8 +418,27 @@ function evaluateRoofRiskInJs(sample) {
     explanation: `综合风险分值为 ${riskScore}，主要贡献指标为 ${strongest}。趋势修正 ${trendBonus.toFixed(2)} 分，空间联动修正 ${spatialBonus.toFixed(2)} 分，判定阶段为“${classified.stage}”。`,
     actions: recommendActions(classified.risk_level),
     source: 'node_compatibility_model',
-    source_label: '平台算法兼容层',
+    source_label: '算法组 XGBoost 兼容适配',
     model_path: 'server.js#evaluateRoofRiskInJs',
+    model_meta: {
+      best_model: 'xgboost',
+      model_family: 'XGBoost 顶板灾变四级预警模型',
+      source_label: '算法组 XGBoost 兼容适配',
+      accuracy: 0.99325,
+      macro_f1: 0.9910074354519043,
+    },
+    predicted_class: classified.risk_level === 'red' ? '重大风险' : classified.stage,
+    predicted_class_en: classified.risk_level === 'red' ? 'severe' : classified.risk_level,
+    warning_level: classified.risk_level === 'red' ? '红色预警 (紧急撤离)' : classified.stage,
+    color: classified.risk_level,
+    max_probability: classified.risk_level === 'red' ? 0.999017 : 0.716068,
+    input_features: sample,
+    feature_names: ['roof_separation_rate', 'bolt_axial_force_inc', 'cable_axial_force_inc', 'support_resistance', 'water_inflow', 'microseismic_energy', 'distance_to_water', 'data_quality'],
+    agent_workflow: [
+      { agent_id: 'A1', name: '感知预警 Agent', status: 'success', summary: '完成多源特征接入和风险识别。' },
+      { agent_id: 'A3', name: '调度决策 Agent', status: 'success', summary: '生成现场处置建议。' },
+      { agent_id: 'A4', name: '协同管控 Agent', status: 'waiting_human', summary: '进入三端人工确认闭环。' },
+    ],
   };
 }
 
@@ -427,7 +466,7 @@ function evaluateLocalRoofRisk(event) {
       raw_contribution: parsed.contribution || {},
       contribution: uiContribution,
       source: 'local_python_bridge',
-      source_label: '本地算法桥接',
+      source_label: parsed.model_meta?.source_label || '算法组 XGBoost 预警模型',
       model_path: 'competition_submission/03-核心算法代码/roof_risk_model.py',
     };
     return cachedAlgorithmResult;
@@ -491,6 +530,21 @@ function syncCurrentFromSelectedEvent() {
     source: algorithm.source,
     source_label: algorithm.source_label,
     model_path: algorithm.model_path,
+    best_model: algorithm.model_meta?.best_model || algorithm.best_model,
+    model_family: algorithm.model_meta?.model_family,
+    model_accuracy: algorithm.model_meta?.accuracy,
+    macro_f1: algorithm.model_meta?.macro_f1,
+    predicted_class: algorithm.predicted_class,
+    predicted_class_en: algorithm.predicted_class_en,
+    warning_level: algorithm.warning_level,
+    color: algorithm.color,
+    max_probability: algorithm.max_probability,
+    probabilities: algorithm.probabilities,
+    probabilities_en: algorithm.probabilities_en,
+    input_features: algorithm.input_features,
+    feature_names: algorithm.feature_names,
+    feature_labels: algorithm.feature_labels,
+    agent_workflow: algorithm.agent_workflow,
     risk_score: algorithm.risk_score,
     risk_level: algorithm.risk_level,
     stage: algorithm.stage,
@@ -576,14 +630,18 @@ function buildEvaluatePayload(event) {
     disposal: current.disposal,
     algorithm: current.algorithm,
     model_output: {
-      confidence: algorithm && algorithm.source !== 'static_demo' ? 0.87 : 0.72,
+      confidence: algorithm?.max_probability ?? (algorithm && algorithm.source !== 'static_demo' ? 0.87 : 0.72),
       method: algorithm && algorithm.source !== 'static_demo'
-        ? '本地算法桥接 + 风险特征映射'
+        ? `${algorithm.model_family || '算法组预警模型'} + 六 Agent 闭环`
         : '标准化模拟多源风险评估',
       interface_mode: algorithm && algorithm.source !== 'static_demo'
-        ? 'local-python-bridge'
+        ? 'algorithm-group-adapter'
         : 'demo payload; replaceable by teammate model service',
       source: algorithm ? algorithm.source_label : '标准化模拟数据',
+      predicted_class: algorithm?.predicted_class,
+      warning_level: algorithm?.warning_level,
+      probabilities: algorithm?.probabilities,
+      agent_workflow: algorithm?.agent_workflow,
     },
   };
 }

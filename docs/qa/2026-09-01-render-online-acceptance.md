@@ -30,11 +30,13 @@ GET https://smart-mine-v2-balanced.onrender.com/api/roof-risk/current
 risk.score = 89.26
 risk.level = red
 risk.stage = 顶板垮落预警
-algorithm.source_label = 本地算法桥接
+algorithm.source_label = 算法组 XGBoost 预警模型
+algorithm.predicted_class = 重大风险
+algorithm.max_probability = 0.999017
 algorithm.model_path = competition_submission/03-核心算法代码/roof_risk_model.py
 ```
 
-结论：线上接口已接入本地算法桥接输出，企业端、监管端、智库端读取同一 RoofRisk API v1 数据。
+结论：线上接口已接入算法组 XGBoost 四级预警结果，企业端、监管端、智库端读取同一 RoofRisk API v1 数据。
 
 ## 页面验收
 
@@ -42,7 +44,7 @@ algorithm.model_path = competition_submission/03-核心算法代码/roof_risk_mo
 |---|---|
 | 企业端 | 中央综合风险指数、右侧顶板风险态势、智能决策建议均显示 `89.26`，旧值 `92` 已消失。 |
 | 监管端 | 区域矿井风险总览显示 6 座矿井，第一条事件显示 `红色预警 · 89.26`。 |
-| 智库端 | 显示 `接口在线 · 算法已接入`、`算法来源 本地算法桥接`，模型解释和复盘摘要使用 `89.26`。 |
+| 智库端 | 显示 `接口在线 · 算法已接入`、`算法来源 XGBoost 顶板灾变四级预警模型`、四级概率、Agent 链路，模型解释和复盘摘要使用 `89.26`。 |
 
 ## 截图留档
 

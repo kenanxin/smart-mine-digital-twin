@@ -378,7 +378,7 @@
       <p>面向专家组和算法团队展示多源指标融合、阈值配置、贡献因子和判别依据。</p>
     </div>
     <div class="portal-score">
-      <b>0.87</b>
+      <b id="expertConfidence">0.999</b>
       <span>模型置信度</span>
     </div>
   </div>
@@ -387,26 +387,30 @@
     <section class="portal-card">
       <div class="portal-card-head">
         <strong>多源输入</strong>
-        <span>模拟接口验证</span>
+        <span>XGBoost 8 维特征</span>
       </div>
-      <div class="factor-list">
-        <p><span>顶板压力</span><b>33.0 MPa</b><i style="width:82%"></i></p>
-        <p><span>顶板离层量</span><b>40.0 mm</b><i style="width:88%"></i></p>
-        <p><span>支架阻力</span><b>11800 kN</b><i style="width:91%"></i></p>
-        <p><span>微震能量</span><b>1850 J</b><i style="width:78%"></i></p>
+      <div class="factor-list" id="expertFeatureList">
+        <p><span>顶板离层速率</span><b>40.0 mm/h</b><i style="width:88%"></i></p>
+        <p><span>锚杆轴力增量</span><b>36.0 kN</b><i style="width:60%"></i></p>
+        <p><span>锚索轴力增量</span><b>50.0 kN</b><i style="width:72%"></i></p>
+        <p><span>支架阻力</span><b>11.8 MPa</b><i style="width:91%"></i></p>
+        <p><span>涌水量</span><b>36.0 m3/h</b><i style="width:72%"></i></p>
+        <p><span>微震能量</span><b>1850 J</b><i style="width:97%"></i></p>
+        <p><span>距水体/岩溶体距离</span><b>18.0 m</b><i style="width:78%"></i></p>
+        <p><span>数据质量</span><b>正常</b><i style="width:100%"></i></p>
       </div>
     </section>
 
     <section class="portal-card">
       <div class="portal-card-head">
-        <strong>融合权重</strong>
-        <span>算法组方案</span>
+        <strong>模型输出概率</strong>
+        <span id="expertModelName">XGBoost</span>
       </div>
-      <div class="weight-stack">
-        <div style="--w:36%"><span>应力扰动</span><b>36%</b></div>
-        <div style="--w:28%"><span>位移离层</span><b>28%</b></div>
-        <div style="--w:22%"><span>支护状态</span><b>22%</b></div>
-        <div style="--w:14%"><span>微震能量</span><b>14%</b></div>
+      <div class="weight-stack" id="expertProbabilityStack">
+        <div style="--w:0.01%"><span>低风险</span><b>0.00%</b></div>
+        <div style="--w:0.01%"><span>一般风险</span><b>0.01%</b></div>
+        <div style="--w:0.09%"><span>较大风险</span><b>0.09%</b></div>
+        <div style="--w:99.90%"><span>重大风险</span><b>99.90%</b></div>
       </div>
     </section>
 
@@ -446,7 +450,9 @@
       <div class="api-status-grid">
         <p><span>接口版本</span><b id="apiVersion">RoofRisk API v1</b></p>
         <p><span>数据源</span><b id="apiDataSource">标准化模拟多源数据</b></p>
-        <p><span>算法来源</span><b id="apiAlgorithmSource">本地算法桥接</b></p>
+        <p><span>算法来源</span><b id="apiAlgorithmSource">算法组 XGBoost 预警模型</b></p>
+        <p><span>预测类别</span><b id="apiPredictedClass">重大风险</b></p>
+        <p><span>模型准确率</span><b id="apiModelAccuracy">99.33%</b></p>
         <p><span>当前事件</span><b id="apiEventId">EVT-1206-20260822-001</b></p>
         <p><span>当前工作面</span><b id="apiFaceId">1206</b></p>
       </div>

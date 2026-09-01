@@ -776,6 +776,12 @@ function formatTriggerName(trigger) {
     support_resistance: '支架工作阻力',
     microseismic: '微震能量',
     microseismic_energy: '微震能量',
+    roof_separation_rate: '顶板离层速率',
+    bolt_axial_force_inc: '锚杆轴力增量',
+    cable_axial_force_inc: '锚索轴力增量',
+    water_inflow: '涌水量',
+    distance_to_water: '距水体/岩溶体距离',
+    data_quality: '数据质量',
   };
   return labels[trigger] ?? trigger;
 }
@@ -798,6 +804,62 @@ function statusText(status) {
     closed: '已闭环',
   };
   return labels[status] ?? status ?? '--';
+}
+
+function renderExpertAlgorithmPanel(payload = {}) {
+  const algorithm = payload.algorithm || {};
+  const features = algorithm.input_features || {};
+  const labels = algorithm.feature_labels || {};
+  const units = {
+    roof_separation_rate: 'mm/h',
+    bolt_axial_force_inc: 'kN',
+    cable_axial_force_inc: 'kN',
+    support_resistance: 'MPa',
+    water_inflow: 'm3/h',
+    microseismic_energy: 'J',
+    distance_to_water: 'm',
+    data_quality: '',
+  };
+  const featureOrder = algorithm.feature_names || [
+    'roof_separation_rate',
+    'bolt_axial_force_inc',
+    'cable_axial_force_inc',
+    'support_resistance',
+    'water_inflow',
+    'microseismic_energy',
+    'distance_to_water',
+    'data_quality',
+  ];
+  const featureList = document.getElementById('expertFeatureList');
+  if (featureList) {
+    featureList.innerHTML = featureOrder.map(key => {
+      const value = features[key];
+      const numeric = Number(value);
+      const width = Number.isFinite(numeric)
+        ? key === 'distance_to_water'
+          ? Math.max(8, Math.min(100, 100 - numeric))
+          : Math.max(8, Math.min(100, numeric > 100 ? numeric / 20 : numeric * 2))
+        : 100;
+      const displayValue = Number.isFinite(numeric) ? numeric.toFixed(key === 'microseismic_energy' ? 0 : 1) : (value ?? '--');
+      return `<p><span>${labels[key] || formatTriggerName(key)}</span><b>${displayValue} ${units[key] || ''}</b><i style="width:${width}%"></i></p>`;
+    }).join('');
+  }
+
+  const probabilityStack = document.getElementById('expertProbabilityStack');
+  const probabilities = algorithm.probabilities || {};
+  if (probabilityStack && Object.keys(probabilities).length) {
+    probabilityStack.innerHTML = Object.entries(probabilities).map(([name, value]) => {
+      const percent = Math.max(0.01, Number(value) * 100);
+      return `<div style="--w:${Math.min(100, percent).toFixed(2)}%"><span>${name}</span><b>${percent.toFixed(2)}%</b></div>`;
+    }).join('');
+  }
+
+  setText('expertModelName', algorithm.best_model || 'XGBoost');
+  setText('apiPredictedClass', algorithm.predicted_class || payload.risk?.stage || '--');
+  const accuracy = Number(algorithm.model_accuracy);
+  setText('apiModelAccuracy', Number.isFinite(accuracy) ? `${(accuracy * 100).toFixed(2)}%` : '--');
+  const confidence = Number(algorithm.max_probability);
+  setText('expertConfidence', Number.isFinite(confidence) ? confidence.toFixed(3) : '--');
 }
 
 function renderClosedLoopTrack(containerId, steps = []) {
@@ -969,6 +1031,7 @@ async function selectRoofRiskEvent(eventId) {
 
 function refreshClosedLoop(payload) {
   const loop = payload.closed_loop || {};
+  const algorithm = payload.algorithm || {};
   const enterprise = loop.portal_roles?.enterprise || {};
   const regulator = loop.portal_roles?.regulator || {};
   const expert = loop.portal_roles?.expert || {};
@@ -1010,10 +1073,15 @@ function refreshClosedLoop(payload) {
       `微震 ${Math.round((contribution.microseismic ?? 0) * 100)}%`,
     ].join('，');
     const stepText = steps.map(step => step.label).join(' → ');
+    const agentText = Array.isArray(algorithm.agent_workflow)
+      ? algorithm.agent_workflow.map(agent => `${agent.agent_id}${agent.name.replace(' Agent', '')}`).join(' → ')
+      : 'A1感知预警 → A3调度决策 → A4协同管控';
     evidence.innerHTML = `
       <p><b>触发指标</b><span>${triggerText}</span></p>
+      <p><b>模型输出</b><span>${algorithm.predicted_class || payload.risk?.stage || '--'}，${algorithm.warning_level || formatRiskLevel(payload.risk?.level)}，置信度 ${algorithm.max_probability ?? '--'}</span></p>
       <p><b>贡献因子</b><span>${contributionText}</span></p>
       <p><b>当前证据</b><span>${loop.command || payload.risk?.explanation || '--'}</span></p>
+      <p><b>Agent 链路</b><span>${agentText}</span></p>
       <p><b>处置链路</b><span>${stepText || '--'}</span></p>
     `;
   }
@@ -1023,9 +1091,11 @@ function refreshClosedLoop(payload) {
     const triggerText = Array.isArray(payload.risk?.trigger) ? payload.risk.trigger.map(formatTriggerName).join('、') : '多源指标';
     replay.innerHTML = `
       <strong>事件复盘摘要</strong>
-      <p>事件 ${payload.event_id || '--'} 综合风险指数 ${payload.risk?.score ?? '--'}，触发指标为 ${triggerText}。当前闭环阶段为 ${loop.active_step_label || activeStep.label || '--'}，${loop.command || '三端持续跟踪处置进展。'}</p>
+      <p>事件 ${payload.event_id || '--'} 由算法组 ${algorithm.best_model || 'XGBoost'} 模型判定为 ${algorithm.predicted_class || payload.risk?.stage || '--'}，综合展示分值 ${payload.risk?.score ?? '--'}，触发指标为 ${triggerText}。当前闭环阶段为 ${loop.active_step_label || activeStep.label || '--'}，${loop.command || '三端持续跟踪处置进展。'}</p>
     `;
   }
+
+  renderExpertAlgorithmPanel(payload);
 
   document.querySelectorAll('[data-loop-action="advance"]').forEach(button => {
     button.disabled = isClosed;
@@ -1048,7 +1118,7 @@ async function refreshRoofRiskApiStatus() {
     latestRoofRiskApiPayload = payload;
     setText('apiVersion', payload.api_version ?? 'RoofRisk API v1');
     setText('apiDataSource', normalizeDataSourceLabel(payload.data_source));
-    setText('apiAlgorithmSource', payload.algorithm?.source_label || payload.model_output?.source || '标准化模拟数据');
+    setText('apiAlgorithmSource', payload.algorithm?.model_family || payload.algorithm?.source_label || payload.model_output?.source || '标准化模拟数据');
     setText('apiEventId', payload.event_id ?? '--');
     setText('apiFaceId', payload.face_id ?? '--');
     refreshClosedLoop(payload);
