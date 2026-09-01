@@ -202,14 +202,15 @@ async function loadIntegratedMine(container) {
       status.querySelector('small').textContent = `${name} ${percent}%`;
       status.style.setProperty('--mine-load', `${percent}%`);
     });
-    const environment = await new RGBELoader().loadAsync('./assets/hdri/quarry_02_4k.hdr');
-    environment.mapping = THREE.EquirectangularReflectionMapping;
-    mineEnvironment = environment;
-    scene.environment = environment;
-    scene.environmentIntensity = 0.72;
-    scene.background = environment;
-    scene.backgroundIntensity = 0.48;
-    scene.backgroundBlurriness = 0;
+    const environment = await loadEnvironmentMap();
+    if (environment) {
+      mineEnvironment = environment;
+      scene.environment = environment;
+      scene.environmentIntensity = 0.72;
+      scene.background = environment;
+      scene.backgroundIntensity = 0.48;
+      scene.backgroundBlurriness = 0;
+    }
 
     const requestedVariant = new URLSearchParams(window.location.search).get('scene');
     const isMineV2 = requestedVariant === 'v2';
@@ -247,6 +248,23 @@ async function loadIntegratedMine(container) {
     status.querySelector('b').textContent = '井下场景加载失败';
     status.querySelector('small').textContent = error.message || String(error);
   }
+}
+
+async function loadEnvironmentMap() {
+  const loader = new RGBELoader();
+  const fallback = () => null;
+  const loadWithTimeout = url => Promise.race([
+    loader.loadAsync(url),
+    new Promise(resolve => { setTimeout(() => resolve(null), 5000); }),
+  ]).catch(fallback);
+
+  const environment = await loadWithTimeout('./assets/hdri/quarry_02_1k.hdr');
+  if (!environment) {
+    console.warn('HDR 环境图加载超时，已使用默认场景光照继续渲染');
+    return null;
+  }
+  environment.mapping = THREE.EquirectangularReflectionMapping;
+  return environment;
 }
 
 // ==================== 地面 ====================
