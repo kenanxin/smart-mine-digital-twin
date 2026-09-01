@@ -44,22 +44,31 @@ GET /api/roof-risk/current
     "microseismic_energy": { "value": 1850, "unit": "J", "status": "danger" }
   },
   "risk": {
-    "score": 92,
+    "score": 89.26,
     "level": "red",
     "stage": "顶板垮落预警",
     "trigger": ["separation", "support_resistance", "microseismic_energy"],
     "explanation": "离层量、支架阻力和微震能量多源耦合异常，应力场与位移场热点在工作面出口叠加。",
     "contribution": {
-      "stress": 0.36,
-      "displacement": 0.28,
-      "support": 0.22,
-      "microseismic": 0.14
+      "stress": 0.2053,
+      "displacement": 0.3762,
+      "support": 0.2815,
+      "microseismic": 0.137
     }
   },
   "disposal": {
     "status": "processing",
     "actions": ["立即停机", "人员撤离", "封控出口", "补强支护"],
     "closed_loop_rate": 0.83
+  },
+  "algorithm": {
+    "source": "local_python_bridge",
+    "source_label": "本地算法桥接",
+    "model_path": "competition_submission/03-核心算法代码/roof_risk_model.py",
+    "risk_score": 89.26,
+    "risk_level": "red",
+    "stage": "顶板垮落预警",
+    "actions": ["立即停机撤人", "封控高风险区域", "执行补强支护和持续监测"]
   }
 }
 ```
@@ -89,6 +98,12 @@ GET /api/roof-risk/current
 | disposal.status | string | 处置状态：pending、confirmed、processing、closed |
 | disposal.actions | array | 推荐处置动作 |
 | disposal.closed_loop_rate | number | 闭环率 |
+| algorithm.source | string | 算法来源标识 |
+| algorithm.source_label | string | 页面展示用算法来源 |
+| algorithm.model_path | string | 实际调用的算法文件 |
+| algorithm.risk_score | number | 算法输出风险分值 |
+| algorithm.risk_level | string | 算法输出风险等级 |
+| algorithm.stage | string | 算法输出阶段 |
 
 ## 5. 事件状态中心与闭环接口
 

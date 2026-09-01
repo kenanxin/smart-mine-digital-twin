@@ -1,9 +1,30 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const PORT = Number(process.env.PORT) || 8080;
 const ROOT = __dirname;
+const LOCAL_ALGO_DIR = path.join(ROOT, 'competition_submission', '03-核心算法代码');
+const LOCAL_ALGO_BRIDGE = path.join(ROOT, 'tools', 'roof-risk-bridge.py');
+
+const ALGORITHM_THRESHOLDS = {
+  roof_stress: { attention: 22.0, warning: 30.0, danger: 40.0 },
+  separation: { attention: 12.0, warning: 22.0, danger: 35.0 },
+  subsidence: { attention: 12.0, warning: 24.0, danger: 42.0 },
+  support_resistance: { attention: 8500.0, warning: 10000.0, danger: 12000.0 },
+  anchor_load: { attention: 120.0, warning: 170.0, danger: 230.0 },
+  microseismic_energy: { attention: 600.0, warning: 1100.0, danger: 1800.0 },
+};
+
+const ALGORITHM_WEIGHTS = {
+  roof_stress: 0.24,
+  separation: 0.20,
+  subsidence: 0.16,
+  support_resistance: 0.18,
+  anchor_load: 0.10,
+  microseismic_energy: 0.12,
+};
 
 const CLOSED_LOOP_STATES = [
   {
@@ -43,6 +64,8 @@ const CLOSED_LOOP_STATES = [
 
 let loopStateIndex = 0;
 let selectedEventId = 'EVT-1206-20260822-001';
+let cachedAlgorithmEventId = null;
+let cachedAlgorithmResult = null;
 
 const ROOF_RISK_CURRENT = {
   api_version: 'RoofRisk API v1',
@@ -61,7 +84,7 @@ const ROOF_RISK_CURRENT = {
     microseismic_energy: { value: 1850, unit: 'J', status: 'danger' },
   },
   risk: {
-    score: 92,
+    score: 89.26,
     level: 'red',
     stage: '顶板垮落预警',
     trigger: ['separation', 'support_resistance', 'microseismic_energy'],
@@ -147,7 +170,7 @@ const ROOF_RISK_HISTORY = [
   { offset: '-6m', score: 68, stage: '离层异常' },
   { offset: '-4m', score: 76, stage: '支架阻力异常' },
   { offset: '-2m', score: 84, stage: '橙色预警' },
-  { offset: '当前', score: 92, stage: '顶板垮落预警' },
+  { offset: '当前', score: 89.26, stage: '顶板垮落预警' },
 ];
 
 const ROOF_RISK_EVENTS = [
@@ -156,7 +179,7 @@ const ROOF_RISK_EVENTS = [
     mine_id: 'M01',
     mine_name: '示范矿井',
     face_id: '1206',
-    risk_score: 92,
+    risk_score: 89.26,
     risk_level: 'red',
     stage: '顶板垮落预警',
     status: 'processing',
@@ -225,12 +248,12 @@ const EVENT_PROFILES = {
   'EVT-QL303-20260822-002': {
     timestamp: '2026-08-22 09:18:00',
     metrics: {
-      roof_stress: { value: 27.6, unit: 'MPa', status: 'warning' },
-      separation: { value: 24.5, unit: 'mm', status: 'warning' },
-      subsidence: { value: 19.8, unit: 'mm', status: 'watch' },
-      support_resistance: { value: 10960, unit: 'kN', status: 'danger' },
-      anchor_load: { value: 172, unit: 'kN', status: 'watch' },
-      microseismic_energy: { value: 920, unit: 'J', status: 'warning' },
+      roof_stress: { value: 29.5, unit: 'MPa', status: 'warning' },
+      separation: { value: 28.0, unit: 'mm', status: 'warning' },
+      subsidence: { value: 22.0, unit: 'mm', status: 'watch' },
+      support_resistance: { value: 11650, unit: 'kN', status: 'danger' },
+      anchor_load: { value: 190, unit: 'kN', status: 'watch' },
+      microseismic_energy: { value: 1200, unit: 'J', status: 'warning' },
     },
     trigger: ['support_resistance', 'roof_stress'],
     explanation: '303盘区支架工作阻力异常抬升，顶板应力同步上行，但位移离层尚未形成红色耦合。',
@@ -239,12 +262,12 @@ const EVENT_PROFILES = {
   'EVT-DY215-20260822-003': {
     timestamp: '2026-08-22 09:05:00',
     metrics: {
-      roof_stress: { value: 21.8, unit: 'MPa', status: 'watch' },
-      separation: { value: 18.4, unit: 'mm', status: 'watch' },
-      subsidence: { value: 12.6, unit: 'mm', status: 'safe' },
-      support_resistance: { value: 9020, unit: 'kN', status: 'safe' },
-      anchor_load: { value: 154, unit: 'kN', status: 'safe' },
-      microseismic_energy: { value: 520, unit: 'J', status: 'watch' },
+      roof_stress: { value: 24.5, unit: 'MPa', status: 'watch' },
+      separation: { value: 21.2, unit: 'mm', status: 'watch' },
+      subsidence: { value: 16.8, unit: 'mm', status: 'safe' },
+      support_resistance: { value: 9800, unit: 'kN', status: 'safe' },
+      anchor_load: { value: 166, unit: 'kN', status: 'safe' },
+      microseismic_energy: { value: 820, unit: 'J', status: 'watch' },
     },
     trigger: ['separation', 'microseismic_energy'],
     explanation: '东翼运输顺槽离层趋势和微震能量轻度抬升，支护状态稳定，维持黄色关注。',
@@ -263,11 +286,194 @@ function getLoopStepStatuses(progress) {
   return ['done', 'pending', 'active', 'done', 'pending'];
 }
 
+function normalizeContribution(contribution = {}) {
+  const entries = Object.entries(contribution)
+    .map(([key, value]) => [key, Number(value)])
+    .filter(([, value]) => Number.isFinite(value) && value > 0);
+  const total = entries.reduce((sum, [, value]) => sum + value, 0);
+  if (!total) return {};
+  return Object.fromEntries(entries.map(([key, value]) => [key, Number((value / total).toFixed(4))]));
+}
+
+function mapAlgorithmContributionForUi(contribution = {}) {
+  const roofStress = Number(contribution.roof_stress ?? 0);
+  const separation = Number(contribution.separation ?? 0);
+  const subsidence = Number(contribution.subsidence ?? 0);
+  const support = Number(contribution.support_resistance ?? 0);
+  const anchor = Number(contribution.anchor_load ?? 0);
+  const microseismic = Number(contribution.microseismic_energy ?? 0);
+  return normalizeContribution({
+    stress: roofStress,
+    displacement: separation + subsidence,
+    support: support + anchor,
+    microseismic,
+  });
+}
+
+function deriveAlgorithmSample(event) {
+  const metrics = event?.metrics || {};
+  const level = event?.risk_level || 'green';
+  const trendDefaults = {
+    green: { stress: 0.4, displacement: 0.4, coupling: 0.2 },
+    attention: { stress: 0.8, displacement: 0.9, coupling: 0.34 },
+    yellow: { stress: 2.2, displacement: 2.3, coupling: 0.66 },
+    orange: { stress: 3.5, displacement: 3.6, coupling: 0.88 },
+    red: { stress: 3.5, displacement: 4.0, coupling: 0.92 },
+  };
+  const trend = trendDefaults[level] || trendDefaults.green;
+  return {
+    sensor_id: event?.event_id || 'unknown',
+    roof_stress: Number(metrics.roof_stress?.value ?? 0),
+    separation: Number(metrics.separation?.value ?? 0),
+    subsidence: Number(metrics.subsidence?.value ?? 0),
+    support_resistance: Number(metrics.support_resistance?.value ?? 0),
+    anchor_load: Number(metrics.anchor_load?.value ?? 0),
+    microseismic_energy: Number(metrics.microseismic_energy?.value ?? 0),
+    stress_growth_rate: trend.stress,
+    displacement_growth_rate: trend.displacement,
+    spatial_coupling_index: trend.coupling,
+    timestamp: event?.created_at || new Date().toISOString(),
+  };
+}
+
+function normalizeMetric(value, threshold) {
+  if (value <= threshold.attention) {
+    return Math.max(0, value / threshold.attention * 30);
+  }
+  if (value <= threshold.warning) {
+    const span = threshold.warning - threshold.attention;
+    return 30 + (value - threshold.attention) / span * 25;
+  }
+  if (value <= threshold.danger) {
+    const span = threshold.danger - threshold.warning;
+    return 55 + (value - threshold.warning) / span * 30;
+  }
+  return Math.min(100, 85 + (value - threshold.danger) / threshold.danger * 15);
+}
+
+function classifyRisk(score) {
+  if (score >= 85) return { risk_level: 'red', stage: '顶板垮落预警' };
+  if (score >= 70) return { risk_level: 'orange', stage: '支架阻力异常' };
+  if (score >= 50) return { risk_level: 'yellow', stage: '离层异常' };
+  if (score >= 30) return { risk_level: 'attention', stage: '顶板压力升高' };
+  return { risk_level: 'green', stage: '正常监测' };
+}
+
+function recommendActions(level) {
+  const actions = {
+    green: ['保持常规巡检', '维持自动采集', '记录监测基线'],
+    attention: ['提高采样频率', '复核重点测点', '观察应力和位移趋势'],
+    yellow: ['降低推进速度', '检查锚杆锚索受力', '复核离层仪和支架状态'],
+    orange: ['准备停机处置', '调整支架初撑力', '现场巡检出口关键区域'],
+    red: ['立即停机撤人', '封控高风险区域', '执行补强支护和持续监测'],
+  };
+  return actions[level] || actions.green;
+}
+
+function evaluateRoofRiskInJs(sample) {
+  const rawContribution = {};
+  let baseScore = 0;
+  Object.entries(ALGORITHM_WEIGHTS).forEach(([key, weight]) => {
+    const metricScore = normalizeMetric(Number(sample[key] || 0), ALGORITHM_THRESHOLDS[key]);
+    const weighted = metricScore * weight;
+    rawContribution[key] = Number(weighted.toFixed(2));
+    baseScore += weighted;
+  });
+
+  const stressGrowth = Math.max(0, Number(sample.stress_growth_rate || 0));
+  const displacementGrowth = Math.max(0, Number(sample.displacement_growth_rate || 0));
+  const coupling = Math.min(1, Math.max(0, Number(sample.spatial_coupling_index || 0)));
+  const trendBonus = Math.min(8, stressGrowth * 1.2 + displacementGrowth * 1.4);
+  const spatialBonus = coupling * 7;
+  const riskScore = Number(Math.min(100, baseScore + trendBonus + spatialBonus).toFixed(2));
+  const classified = classifyRisk(riskScore);
+  const strongest = Object.entries(rawContribution).sort((a, b) => b[1] - a[1])[0]?.[0] || 'roof_stress';
+  return {
+    sensor_id: sample.sensor_id || 'unknown',
+    risk_score: riskScore,
+    risk_level: classified.risk_level,
+    stage: classified.stage,
+    raw_contribution: rawContribution,
+    contribution: mapAlgorithmContributionForUi(rawContribution),
+    explanation: `综合风险分值为 ${riskScore}，主要贡献指标为 ${strongest}。趋势修正 ${trendBonus.toFixed(2)} 分，空间联动修正 ${spatialBonus.toFixed(2)} 分，判定阶段为“${classified.stage}”。`,
+    actions: recommendActions(classified.risk_level),
+    source: 'node_compatibility_model',
+    source_label: '平台算法兼容层',
+    model_path: 'server.js#evaluateRoofRiskInJs',
+  };
+}
+
+function evaluateLocalRoofRisk(event) {
+  const sample = deriveAlgorithmSample(event);
+  try {
+    if (event?.event_id && cachedAlgorithmEventId === event.event_id && cachedAlgorithmResult) {
+      return cachedAlgorithmResult;
+    }
+    const output = execFileSync('python', [LOCAL_ALGO_BRIDGE], {
+      cwd: ROOT,
+      env: {
+        ...process.env,
+        ROOFRISK_MODEL_DIR: LOCAL_ALGO_DIR,
+      },
+      input: JSON.stringify(sample),
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024,
+    }).trim();
+    const parsed = JSON.parse(output);
+    const uiContribution = mapAlgorithmContributionForUi(parsed.contribution || {});
+    cachedAlgorithmEventId = event?.event_id || null;
+    cachedAlgorithmResult = {
+      ...parsed,
+      raw_contribution: parsed.contribution || {},
+      contribution: uiContribution,
+      source: 'local_python_bridge',
+      source_label: '本地算法桥接',
+      model_path: 'competition_submission/03-核心算法代码/roof_risk_model.py',
+    };
+    return cachedAlgorithmResult;
+  } catch (error) {
+    console.warn('[RoofRisk] local algorithm bridge failed:', error?.message || error);
+    cachedAlgorithmEventId = event?.event_id || null;
+    cachedAlgorithmResult = evaluateRoofRiskInJs(sample);
+    return cachedAlgorithmResult;
+  }
+}
+
+function buildRoofRiskHistory(currentRisk = {}) {
+  return ROOF_RISK_HISTORY.map(point => (
+    point.offset === '当前'
+      ? {
+          ...point,
+          score: Number(currentRisk.score ?? point.score),
+          stage: currentRisk.stage || point.stage,
+        }
+      : point
+  ));
+}
+
 function syncCurrentFromSelectedEvent() {
   const event = getSelectedEvent();
   const profile = EVENT_PROFILES[event.event_id] || EVENT_PROFILES['EVT-1206-20260822-001'];
   const progress = event.closed_loop_progress ?? 0;
   const isClosed = progress >= 100 || event.status === 'closed';
+  const algorithm = evaluateLocalRoofRisk({ ...event, metrics: profile.metrics });
+  const risk = algorithm
+    ? {
+        score: Number(algorithm.risk_score ?? event.risk_score ?? 0),
+        level: algorithm.risk_level || event.risk_level,
+        stage: algorithm.stage || event.stage,
+        trigger: profile.trigger,
+        explanation: algorithm.explanation || profile.explanation,
+        contribution: algorithm.contribution || profile.contribution,
+      }
+    : {
+        score: event.risk_score,
+        level: event.risk_level,
+        stage: event.stage,
+        trigger: profile.trigger,
+        explanation: profile.explanation,
+        contribution: profile.contribution,
+      };
 
   ROOF_RISK_CURRENT.mine_id = event.mine_id;
   ROOF_RISK_CURRENT.mine_name = event.mine_name;
@@ -275,13 +481,30 @@ function syncCurrentFromSelectedEvent() {
   ROOF_RISK_CURRENT.event_id = event.event_id;
   ROOF_RISK_CURRENT.timestamp = profile.timestamp || event.created_at;
   ROOF_RISK_CURRENT.metrics = profile.metrics;
-  ROOF_RISK_CURRENT.risk.score = event.risk_score;
-  ROOF_RISK_CURRENT.risk.level = event.risk_level;
-  ROOF_RISK_CURRENT.risk.stage = event.stage;
-  ROOF_RISK_CURRENT.risk.trigger = profile.trigger;
-  ROOF_RISK_CURRENT.risk.explanation = profile.explanation;
-  ROOF_RISK_CURRENT.risk.contribution = profile.contribution;
+  ROOF_RISK_CURRENT.risk.score = risk.score;
+  ROOF_RISK_CURRENT.risk.level = risk.level;
+  ROOF_RISK_CURRENT.risk.stage = risk.stage;
+  ROOF_RISK_CURRENT.risk.trigger = risk.trigger;
+  ROOF_RISK_CURRENT.risk.explanation = risk.explanation;
+  ROOF_RISK_CURRENT.risk.contribution = risk.contribution;
+  ROOF_RISK_CURRENT.algorithm = algorithm ? {
+    source: algorithm.source,
+    source_label: algorithm.source_label,
+    model_path: algorithm.model_path,
+    risk_score: algorithm.risk_score,
+    risk_level: algorithm.risk_level,
+    stage: algorithm.stage,
+    actions: algorithm.actions,
+    raw_contribution: algorithm.raw_contribution || {},
+  } : {
+    source: 'static_demo',
+    source_label: '标准化模拟数据',
+    model_path: null,
+  };
   ROOF_RISK_CURRENT.disposal.status = isClosed ? 'closed' : event.status;
+  if (algorithm?.actions?.length) {
+    ROOF_RISK_CURRENT.disposal.actions = algorithm.actions;
+  }
   ROOF_RISK_CURRENT.disposal.closed_loop_rate = progress / 100;
   ROOF_RISK_CURRENT.closed_loop.active_step = event.active_step;
   ROOF_RISK_CURRENT.closed_loop.active_step_label = event.active_step;
@@ -343,6 +566,28 @@ function readJsonBody(req) {
   });
 }
 
+function buildEvaluatePayload(event) {
+  const current = syncCurrentFromSelectedEvent();
+  const algorithm = current.algorithm || null;
+  return {
+    api_version: current.api_version,
+    event_id: current.event_id,
+    risk: current.risk,
+    disposal: current.disposal,
+    algorithm: current.algorithm,
+    model_output: {
+      confidence: algorithm && algorithm.source !== 'static_demo' ? 0.87 : 0.72,
+      method: algorithm && algorithm.source !== 'static_demo'
+        ? '本地算法桥接 + 风险特征映射'
+        : '标准化模拟多源风险评估',
+      interface_mode: algorithm && algorithm.source !== 'static_demo'
+        ? 'local-python-bridge'
+        : 'demo payload; replaceable by teammate model service',
+      source: algorithm ? algorithm.source_label : '标准化模拟数据',
+    },
+  };
+}
+
 http.createServer((req, res) => {
   const requestUrl = new URL(req.url, `http://localhost:${PORT}`);
   const pathname = requestUrl.pathname;
@@ -368,7 +613,7 @@ http.createServer((req, res) => {
       mine_id: current.mine_id,
       face_id: current.face_id,
       event_id: current.event_id,
-      points: ROOF_RISK_HISTORY,
+      points: buildRoofRiskHistory(current.risk),
     });
     return;
   }
@@ -415,30 +660,28 @@ http.createServer((req, res) => {
   }
 
   if (pathname === '/api/roof-risk/explain' || pathname === '/api/roof-risk/evaluate') {
-    const current = syncCurrentFromSelectedEvent();
-    sendJson(res, {
-      api_version: 'RoofRisk API v1',
-      event_id: current.event_id,
-      risk: current.risk,
-      disposal: current.disposal,
-      model_output: {
-        confidence: 0.87,
-        method: '多源指标归一化 + 趋势修正 + 空间联动修正',
-        interface_mode: 'demo payload; replaceable by teammate model service',
-      },
-    });
+    sendJson(res, buildEvaluatePayload(getSelectedEvent()));
     return;
   }
 
   if (pathname === '/api/roof-risk/events') {
+    const current = syncCurrentFromSelectedEvent();
     sendJson(res, {
       api_version: 'RoofRisk API v1',
       selected_event_id: selectedEventId,
       total: ROOF_RISK_EVENTS.length,
-      events: ROOF_RISK_EVENTS.map(event => ({
-        ...event,
-        selected: event.event_id === selectedEventId,
-      })),
+      events: ROOF_RISK_EVENTS.map(event => {
+        if (event.event_id !== selectedEventId) {
+          return { ...event, selected: false };
+        }
+        return {
+          ...event,
+          risk_score: current.risk.score,
+          risk_level: current.risk.level,
+          stage: current.risk.stage,
+          selected: true,
+        };
+      }),
     });
     return;
   }

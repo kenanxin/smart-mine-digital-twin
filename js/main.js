@@ -880,6 +880,27 @@ function refreshRegulatorEventDetail(event) {
   }
 }
 
+function renderRegionalMineRiskList(events = []) {
+  const list = document.querySelector('.mine-risk-list');
+  if (!list) return;
+  const safeRows = [
+    { name: '南翼回风巷', score: 36, risk_level: 'green', label: '正常巡检' },
+    { name: '北一采区辅运巷', score: 31, risk_level: 'green', label: '正常巡检' },
+    { name: '西翼轨道大巷', score: 28, risk_level: 'green', label: '正常巡检' },
+  ];
+  const riskRows = events.map(event => ({
+    name: event.face_id || event.mine_name || '--',
+    score: event.risk_score ?? '--',
+    risk_level: event.risk_level,
+    label: formatRiskLevel(event.risk_level),
+  }));
+  list.innerHTML = [...riskRows, ...safeRows].map(row => {
+    const score = Number(row.score) || 0;
+    const levelClass = row.risk_level === 'red' ? 'danger' : row.risk_level === 'orange' ? 'warn' : row.risk_level === 'yellow' ? 'watch' : 'safe';
+    return `<div class="mine-risk-row ${levelClass}"><span>${row.name}</span><b>${row.score}</b><em>${row.label}</em><i style="width:${Math.max(0, Math.min(score, 100))}%"></i></div>`;
+  }).join('');
+}
+
 function renderRegulatorEventQueue(events = []) {
   const queue = document.getElementById('regulatorEventQueue');
   const count = document.getElementById('regulatorEventCount');
@@ -902,6 +923,7 @@ function renderRegulatorEventQueue(events = []) {
       await selectRoofRiskEvent(selectedRegulatorEventId);
     });
   });
+  renderRegionalMineRiskList(events);
   refreshRegulatorEventDetail(events.find(event => event.event_id === selectedRegulatorEventId) || events[0]);
 }
 
@@ -1026,10 +1048,13 @@ async function refreshRoofRiskApiStatus() {
     latestRoofRiskApiPayload = payload;
     setText('apiVersion', payload.api_version ?? 'RoofRisk API v1');
     setText('apiDataSource', normalizeDataSourceLabel(payload.data_source));
+    setText('apiAlgorithmSource', payload.algorithm?.source_label || payload.model_output?.source || '标准化模拟数据');
     setText('apiEventId', payload.event_id ?? '--');
     setText('apiFaceId', payload.face_id ?? '--');
     refreshClosedLoop(payload);
-    statusText.textContent = '接口在线';
+    statusText.textContent = payload.algorithm?.source && payload.algorithm.source !== 'static_demo'
+      ? '接口在线 · 算法已接入'
+      : '接口在线 · 模拟回退';
     statusText.classList.remove('api-offline');
     await refreshRegulatorEvents();
   } catch (error) {
