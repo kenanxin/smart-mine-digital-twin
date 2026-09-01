@@ -57,7 +57,7 @@
 ## 6. 示例运行
 
 ```powershell
-cd D:\矿业\smart-mine-v2-balanced\competition_submission\03-核心算法代码
+cd D:\矿业\smart-mine-publish\competition_submission\03-核心算法代码
 python roof_risk_model.py
 ```
 

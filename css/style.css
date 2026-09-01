@@ -1279,6 +1279,11 @@ body.portal-expert .footer {
   box-shadow: 0 0 10px rgba(76, 204, 145, 0.72);
 }
 
+.mine-load-status.leaving {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+}
+
 .mine-load-status.error {
   border-color: rgba(235, 83, 69, 0.5);
 }

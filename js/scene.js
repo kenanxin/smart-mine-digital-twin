@@ -195,6 +195,13 @@ async function loadIntegratedMine(container) {
   status.className = 'mine-load-status';
   status.innerHTML = '<span></span><b>正在装载井下写实场景</b><small>岩层材质 0%</small>';
   container.appendChild(status);
+  const removeStatus = () => {
+    clearTimeout(fallbackStatusTimer);
+    if (!status.isConnected || status.classList.contains('error')) return;
+    status.classList.add('ready', 'leaving');
+    setTimeout(() => status.remove(), 420);
+  };
+  const fallbackStatusTimer = setTimeout(removeStatus, 9000);
 
   try {
     const materials = await loadMineMaterials((progress, name) => {
@@ -241,8 +248,9 @@ async function loadIntegratedMine(container) {
     status.classList.add('ready');
     status.querySelector('b').textContent = '数字孪生场景已就绪';
     status.querySelector('small').textContent = isMineV2 ? '地表露天采区 / 井下 1206 工作面' : '1206 综采工作面';
-    setTimeout(() => status.remove(), 1400);
+    setTimeout(removeStatus, 1400);
   } catch (error) {
+    clearTimeout(fallbackStatusTimer);
     console.error('井下场景加载失败', error);
     status.classList.add('error');
     status.querySelector('b').textContent = '井下场景加载失败';
