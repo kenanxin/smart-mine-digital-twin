@@ -824,7 +824,7 @@ function createParticles() {
 
 // ==================== 标签 ====================
 function createLabels() {
-  const style = 'color:#c8ddf0;font-size:11px;font-family:"Microsoft YaHei",sans-serif;padding:2px 8px;background:rgba(0,0,0,0.72);border:1px solid rgba(0,212,255,0.35);border-radius:3px;white-space:nowrap;pointer-events:none;';
+  const style = 'color:#e9eef2;font-size:11px;font-family:"Microsoft YaHei",sans-serif;padding:2px 8px;background:rgba(7,9,13,0.75);border:1px solid rgba(243,167,18,0.42);border-radius:3px;white-space:nowrap;pointer-events:none;';
 
   [
     // 地面标签
@@ -1394,9 +1394,9 @@ function createEvacuationArrow(color = 0x28d7ff) {
 
 function addEmergencyLabel(text, position, level = 'danger') {
   const div = document.createElement('div');
-  const color = level === 'danger' ? '#ffb6b6' : '#c8f7ff';
-  const border = level === 'danger' ? 'rgba(255,68,68,0.76)' : 'rgba(40,215,255,0.76)';
-  const bg = level === 'danger' ? 'rgba(55,8,12,0.9)' : 'rgba(5,28,38,0.9)';
+  const color = level === 'danger' ? '#ffc2be' : '#ffe0a6';
+  const border = level === 'danger' ? 'rgba(255,93,85,0.76)' : 'rgba(243,167,18,0.76)';
+  const bg = level === 'danger' ? 'rgba(55,8,12,0.9)' : 'rgba(40,29,8,0.9)';
   div.textContent = text;
   div.style.cssText = [
     'padding:3px 7px',
@@ -1875,8 +1875,8 @@ function setupCustomControls(container) {
       : { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY };
     if (tipEl) {
       tipEl.innerHTML = m === 'rotate'
-        ? '🖱️ 左键旋转 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b style="color:#00d4ff">右键→平移模式</b>'
-        : '🖱️ 左键平移 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b style="color:#ffb700">右键→旋转模式</b>';
+        ? '🖱️ 左键旋转 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b style="color:#ffc95e">右键→平移模式</b>'
+        : '🖱️ 左键平移 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b style="color:#3fc9db">右键→旋转模式</b>';
     }
   }
 

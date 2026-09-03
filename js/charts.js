@@ -3,7 +3,7 @@ import { getMineState } from './mine-data.js';
 const chartInstances = {};
 
 const darkTheme = {
-  textStyle: { color: '#8899bb' },
+  textStyle: { color: '#93a5b1' },
   backgroundColor: 'transparent',
 };
 
@@ -21,19 +21,19 @@ export function initEnvChart(domId) {
     xAxis: {
       type: 'category',
       data: samples,
-      axisLine: { lineStyle: { color: '#1a3050' } },
+      axisLine: { lineStyle: { color: '#22303c' } },
       axisTick: { show: false },
-      axisLabel: { color: '#556688', fontSize: 9, interval: 3 },
+      axisLabel: { color: '#5c6f7c', fontSize: 9, interval: 3 },
     },
     yAxis: {
       type: 'value',
       name: 'MPa / mm',
-      splitLine: { lineStyle: { color: '#1a2035' } },
-      axisLabel: { color: '#556688', fontSize: 9 },
+      splitLine: { lineStyle: { color: '#1a2530' } },
+      axisLabel: { color: '#5c6f7c', fontSize: 9 },
       min: 0,
       max: 30,
     },
-    legend: { top: 0, right: 0, textStyle: { color: '#8899bb', fontSize: 9 } },
+    legend: { top: 0, right: 0, textStyle: { color: '#93a5b1', fontSize: 9 } },
     series: [
       {
         name: '顶板压力',
@@ -73,23 +73,23 @@ export function initProdChart(domId) {
       itemWidth: 18,
       itemHeight: 8,
       itemGap: 14,
-      textStyle: { color: '#8899bb', fontSize: 10 },
+      textStyle: { color: '#93a5b1', fontSize: 10 },
       data: ['风险分值', '关注线'],
     },
     xAxis: {
       type: 'category',
       data: labels,
-      axisLine: { lineStyle: { color: '#1a3050' } },
+      axisLine: { lineStyle: { color: '#22303c' } },
       axisTick: { show: false },
-      axisLabel: { color: '#556688', fontSize: 10 },
+      axisLabel: { color: '#5c6f7c', fontSize: 10 },
     },
     yAxis: {
       type: 'value',
       name: '分',
       min: 0,
       max: 100,
-      splitLine: { lineStyle: { color: '#1a2035' } },
-      axisLabel: { color: '#556688', fontSize: 9 },
+      splitLine: { lineStyle: { color: '#1a2530' } },
+      axisLabel: { color: '#5c6f7c', fontSize: 9 },
     },
     series: [
       {
@@ -98,8 +98,8 @@ export function initProdChart(domId) {
         data: buildRiskTrend(getMineState().riskScore, 'normalMonitor'),
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#00d4ff' },
-            { offset: 1, color: '#006488' },
+            { offset: 0, color: '#ffc95e' },
+            { offset: 1, color: '#7a5a10' },
           ]),
           borderRadius: [4, 4, 0, 0],
         },
@@ -145,15 +145,15 @@ export function initAlertChart(domId) {
     xAxis: {
       type: 'category',
       data: ['7/10', '7/11', '7/12', '7/13', '7/14', '7/15', '7/16'],
-      axisLine: { lineStyle: { color: '#1a3050' } },
+      axisLine: { lineStyle: { color: '#22303c' } },
       axisTick: { show: false },
-      axisLabel: { color: '#556688', fontSize: 9 },
+      axisLabel: { color: '#5c6f7c', fontSize: 9 },
     },
     yAxis: {
       type: 'value',
       name: '次',
-      splitLine: { lineStyle: { color: '#1a2035' } },
-      axisLabel: { color: '#556688', fontSize: 9 },
+      splitLine: { lineStyle: { color: '#1a2530' } },
+      axisLabel: { color: '#5c6f7c', fontSize: 9 },
     },
     series: [
       {
@@ -163,13 +163,13 @@ export function initAlertChart(domId) {
         itemStyle: {
           color: (params) => {
             const colors = [
-              'rgba(255,183,0,0.7)',
-              'rgba(255,183,0,0.7)',
-              'rgba(68,138,255,0.7)',
-              'rgba(255,183,0,0.7)',
-              'rgba(68,138,255,0.7)',
-              'rgba(0,230,118,0.7)',
-              'rgba(68,138,255,0.7)',
+              'rgba(242,194,62,0.75)',
+              'rgba(242,194,62,0.75)',
+              'rgba(74,157,224,0.7)',
+              'rgba(242,194,62,0.75)',
+              'rgba(74,157,224,0.7)',
+              'rgba(53,206,127,0.7)',
+              'rgba(74,157,224,0.7)',
             ];
             return colors[params.dataIndex] || colors[0];
           },

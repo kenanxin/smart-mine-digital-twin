@@ -1,3 +1,8 @@
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/chakra-petch@5.2.5/500.css');
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/chakra-petch@5.2.5/600.css');
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/chakra-petch@5.2.5/700.css');
+@import url('https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-screen@1.0.6/font.css');
+
 :root {
   color-scheme: dark;
   --graphite: #0b1117;
@@ -10,7 +15,8 @@
   --muted: #91a3ad;
   --danger: #ff6b64;
   --font-sans: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", sans-serif;
-  --font-data: "Cascadia Mono", "Consolas", monospace;
+  --font-data: "Chakra Petch", "Cascadia Mono", "Consolas", monospace;
+  --font-display: "LXGW WenKai Screen", "Microsoft YaHei", sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -22,14 +28,16 @@ button, input { font: inherit; }
 .mine-identity { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; padding: clamp(28px, 4vw, 64px); overflow: hidden; isolation: isolate; background: url("../images/login-underground.jpg") center / cover no-repeat; }
 .mine-identity::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(4, 10, 14, .92) 0%, rgba(4, 10, 14, .43) 54%, rgba(4, 10, 14, .2) 100%); }
 .mine-identity::after { content: ""; position: absolute; inset: auto 0 0; height: 30%; z-index: -1; background: linear-gradient(0deg, rgba(4, 10, 14, .86), transparent); }
-.brand-mark { display: flex; align-items: center; gap: 12px; font: 700 14px/1 var(--font-data); text-transform: uppercase; }
-.brand-mark img { width: 38px; height: 38px; object-fit: cover; border: 1px solid rgba(237, 244, 246, .2); border-radius: 4px; }
+.brand-mark { display: flex; align-items: center; gap: 12px; font: 700 14px/1 var(--font-data); letter-spacing: 2px; text-transform: uppercase; }
+.brand-mark img { width: 38px; height: 38px; object-fit: cover; border: 1px solid rgba(243, 167, 18, .4); border-radius: 4px; }
 .brand-mark span { padding-top: 2px; }
 .title-block { max-width: 780px; margin: auto 0; padding: 8vh 0; }
-.title-kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; color: var(--cyan); font-size: 14px; font-weight: 700; }
+.title-kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 22px; color: var(--cyan); font-size: 14px; font-weight: 700; letter-spacing: 2px; }
 .title-kicker span { width: 28px; height: 2px; background: var(--amber); }
-.title-block h1 { max-width: 720px; margin: 0; font-size: clamp(38px, 4.3vw, 72px); line-height: 1.14; font-weight: 760; letter-spacing: 0; text-wrap: balance; text-shadow: 0 3px 28px rgba(0, 0, 0, .6); }
-.title-block > p:last-child { margin: 24px 0 0; color: rgba(237, 244, 246, .68); font: 12px/1.6 var(--font-data); }
+.title-block h1 { display: flex; flex-direction: column; gap: 10px; margin: 0; font-family: var(--font-display); font-weight: 400; text-shadow: 0 3px 28px rgba(0, 0, 0, .6); }
+.title-main { display: block; font-size: clamp(44px, 5vw, 80px); line-height: 1.28; letter-spacing: 6px; color: var(--paper); }
+.title-sub { display: block; font-size: clamp(24px, 2.6vw, 42px); line-height: 1.4; letter-spacing: 5px; color: rgba(237, 244, 246, .82); }
+.title-en { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid rgba(237, 244, 246, .18); color: rgba(237, 244, 246, .62); font: 500 12px/1.6 var(--font-data); letter-spacing: 1.2px; text-transform: uppercase; }
 .scene-caption { display: flex; align-items: center; gap: 14px; color: rgba(237, 244, 246, .72); font: 12px/1 var(--font-data); }
 .scene-caption i { width: 40px; height: 1px; background: var(--amber); }
 
@@ -38,8 +46,9 @@ button, input { font: inherit; }
 .access-status { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
 .access-status span { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px rgba(57, 198, 216, .7); }
 .access-heading { margin: clamp(68px, 12vh, 130px) 0 42px; }
-.access-heading p { margin: 0 0 9px; color: var(--cyan); font-size: 13px; font-weight: 700; }
-.access-heading h2 { margin: 0; font-size: 32px; line-height: 1.2; letter-spacing: 0; }
+.access-heading p { margin: 0 0 10px; color: var(--cyan); font-size: 13px; font-weight: 700; letter-spacing: 3px; }
+.access-heading h2 { display: flex; align-items: center; gap: 14px; margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1.25; letter-spacing: 4px; }
+.access-heading h2::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
 .field-group { margin-bottom: 24px; }
 .field-group > label { display: block; margin-bottom: 9px; color: #c7d2d8; font-size: 13px; font-weight: 700; }
 .field-control { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; min-height: 52px; padding: 0 14px; border: 1px solid var(--line); border-radius: 5px; background: var(--steel); transition: border-color .18s ease, box-shadow .18s ease; }
@@ -66,13 +75,17 @@ button, input { font: inherit; }
   .mine-identity::before { background: linear-gradient(90deg, rgba(4, 10, 14, .84), rgba(4, 10, 14, .25)); }
   .brand-mark img { width: 32px; height: 32px; }
   .title-block { margin: auto 0 0; padding: 24px 0 12px; }
-  .title-kicker { margin-bottom: 10px; font-size: 11px; }
-  .title-block h1 { font-size: clamp(26px, 8vw, 36px); line-height: 1.18; }
+  .title-kicker { margin-bottom: 12px; font-size: 11px; letter-spacing: 1px; }
+  .title-kicker span { width: 20px; }
+  .title-block h1 { gap: 6px; }
+  .title-main { font-size: clamp(28px, 8.4vw, 38px); letter-spacing: 3px; }
+  .title-sub { font-size: clamp(16px, 4.6vw, 21px); letter-spacing: 2.5px; }
   .title-block > p:last-child, .scene-caption { display: none; }
   .access-panel { min-height: 0; padding: 26px 22px 20px; border-top: 1px solid var(--line); border-left: 0; }
   .access-panel::before { width: 74px; height: 4px; }
   .access-heading { margin: 26px 0 24px; }
-  .access-heading h2 { font-size: 25px; }
+  .access-heading p { letter-spacing: 2px; }
+  .access-heading h2 { font-size: 27px; letter-spacing: 3px; }
   .field-group { margin-bottom: 18px; }
   .field-control { min-height: 50px; }
   .access-footer { padding-top: 22px; }

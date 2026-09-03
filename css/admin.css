@@ -1,0 +1,304 @@
+/* ============================================================
+   超级管理员中心 — 与主站一致的深层地层 · 矿灯琥珀工业风
+   ============================================================ */
+
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/chakra-petch@5.2.5/500.css');
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/chakra-petch@5.2.5/600.css');
+@import url('https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-screen@1.0.6/font.css');
+
+:root {
+  --bg-primary: #07090d;
+  --bg-card: #10161e;
+  --bg-inset: #0a0f15;
+  --border-color: #22303c;
+  --border-soft: #1a2530;
+  --border-accent: #3d5261;
+  --text-primary: #e9eef2;
+  --text-secondary: #93a5b1;
+  --text-muted: #5c6f7c;
+  --amber: #f3a712;
+  --amber-soft: #ffc95e;
+  --accent-green: #35ce7f;
+  --accent-red: #ff5d55;
+  --font-num: 'Chakra Petch', 'Cascadia Mono', 'Consolas', monospace;
+  --font-display: 'LXGW WenKai Screen', 'Chakra Petch', 'Microsoft YaHei', sans-serif;
+  --font-sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --radius: 4px;
+  --radius-lg: 6px;
+}
+
+*, *::before, *after { box-sizing: border-box; }
+
+body.admin-page {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body.admin-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(243, 167, 18, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(243, 167, 18, 0.016) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+}
+
+.admin-shell {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px 22px 44px;
+}
+
+/* ---- 头部 ---- */
+.admin-head {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 18px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.admin-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 4px;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(243, 167, 18, 0.55) 0 7px,
+    rgba(243, 167, 18, 0.08) 7px 14px
+  );
+}
+.admin-kicker {
+  margin: 0 0 6px;
+  color: var(--amber);
+  font: 600 11px/1 var(--font-num);
+  letter-spacing: 3px;
+}
+.admin-head h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 27px;
+  letter-spacing: 2px;
+}
+.admin-sub {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.admin-actions { display: flex; gap: 10px; }
+
+.admin-btn {
+  padding: 9px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+  font: 600 13px/1 var(--font-sans);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.admin-btn:hover {
+  border-color: rgba(243, 167, 18, 0.55);
+  color: var(--amber-soft);
+  background: rgba(243, 167, 18, 0.08);
+}
+.admin-btn.primary {
+  border-color: rgba(243, 167, 18, 0.62);
+  background: linear-gradient(135deg, rgba(243, 167, 18, 0.24), rgba(185, 124, 10, 0.16));
+  color: #fff;
+}
+.admin-btn.primary:hover {
+  border-color: var(--amber);
+  background: linear-gradient(135deg, rgba(243, 167, 18, 0.34), rgba(185, 124, 10, 0.24));
+}
+.admin-btn:focus-visible { outline: 2px solid var(--amber-soft); outline-offset: 2px; }
+.admin-btn.compact { padding: 7px 10px; white-space: nowrap; }
+.row-actions { display: flex; gap: 8px; }
+
+.admin-status {
+  min-height: 22px;
+  margin: 14px 0 4px;
+  color: var(--accent-green);
+  font-size: 13px;
+}
+.admin-status.error { color: var(--accent-red); }
+
+/* ---- 网格与面板 ---- */
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 18px;
+  margin-top: 18px;
+  align-items: start;
+}
+.admin-users { grid-column: 1 / -1; }
+.table-wrap { overflow-x: auto; }
+.admin-panel {
+  position: relative;
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #121924 0%, var(--bg-card) 100%);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+}
+.admin-panel::before,
+.admin-panel::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(243, 167, 18, 0.5);
+  border-style: solid;
+  pointer-events: none;
+}
+.admin-panel::before {
+  top: 5px;
+  left: 5px;
+  border-width: 1px 0 0 1px;
+}
+.admin-panel::after {
+  right: 5px;
+  bottom: 5px;
+  border-width: 0 1px 1px 0;
+}
+.admin-panel h2 {
+  margin: 0 0 14px;
+  padding-left: 10px;
+  border-left: 3px solid rgba(243, 167, 18, 0.75);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 15.5px;
+  letter-spacing: 1.5px;
+}
+.admin-loading {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ---- 表格 ---- */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-table th,
+.admin-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  vertical-align: top;
+}
+.admin-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.admin-table td strong { color: var(--text-primary); }
+.admin-table td small {
+  color: var(--text-muted);
+  font-family: var(--font-num);
+  font-size: 11px;
+}
+.admin-table tbody tr:hover { background: rgba(243, 167, 18, 0.03); }
+.admin-table tbody tr:last-child td { border-bottom: none; }
+.admin-table { min-width: 760px; }
+.admin-fixed-value { display: flex; flex-direction: column; gap: 3px; }
+
+/* ---- 表单 ---- */
+.admin-table select,
+.admin-panel input,
+.admin-dialog input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-inset);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.admin-table select { padding: 6px 8px; font-size: 12px; }
+.admin-panel input:focus,
+.admin-table select:focus,
+.admin-dialog input:focus {
+  outline: none;
+  border-color: rgba(243, 167, 18, 0.6);
+  box-shadow: 0 0 0 3px rgba(243, 167, 18, 0.12);
+}
+.admin-panel input::placeholder { color: var(--text-muted); }
+.admin-panel select option { background: var(--bg-inset); }
+.field-label {
+  display: block;
+  margin: 0 0 5px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.form-row.full { grid-template-columns: 1fr; }
+.form-actions { display: flex; justify-content: flex-end; }
+
+/* ---- 重置密码对话框 ---- */
+.admin-dialog {
+  width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.admin-dialog::backdrop { background: rgba(2, 10, 14, 0.72); }
+.dialog-body { padding: 20px; }
+.dialog-body h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 18px;
+  letter-spacing: 1.5px;
+}
+.dialog-body p {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+/* ---- 审计日志 ---- */
+.audit-item {
+  margin: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.audit-item:last-child { border-bottom: none; }
+.audit-item strong { color: var(--amber); letter-spacing: 0.5px; }
+.audit-item small { color: var(--text-muted); font-family: var(--font-num); }
+
+@media (max-width: 800px) {
+  .admin-grid { grid-template-columns: 1fr; }
+  .admin-panel { grid-column: 1; }
+  .admin-head { align-items: flex-start; gap: 12px; flex-direction: column; }
+  .admin-table { font-size: 12px; }
+  .form-row { grid-template-columns: 1fr; }
+}
