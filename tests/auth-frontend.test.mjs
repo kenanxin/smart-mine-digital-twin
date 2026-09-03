@@ -40,6 +40,19 @@ test('login script allows super administrators to use the backend admin portal U
   assert.match(script, /window\.location\.replace\(payload\.portalUrl/);
 });
 
+test('login and portal clients accept viewer as a read-only expert-layout role', async () => {
+  const loginScript = read('js/login.js');
+  assert.match(loginScript, /['"]viewer['"]/);
+
+  const { portalUrlForRole } = await import('../js/auth-client.mjs');
+  const viewerUrl = portalUrlForRole('viewer', {
+    pathname: '/',
+    search: '?scene=v2&view=underground&field=risk&portal=viewer',
+    hash: '',
+  });
+  assert.equal(viewerUrl, '/?scene=v2&view=underground&field=risk&portal=expert');
+});
+
 test('login background is a local non-empty raster asset', () => {
   const imagePath = path.join(ROOT, 'images', 'login-underground.jpg');
   assert.equal(fs.existsSync(imagePath), true);
@@ -60,6 +73,7 @@ test('application bootstraps from the session before initializing protected feat
   assert.match(script, /await bootstrapAuthenticatedPortal\(\)/);
   assert.match(script, /await initApp\(session\.user\)/);
   assert.doesNotMatch(script, /setupPortalSwitch/);
+  assert.doesNotMatch(script, /params\.set\(['"]portal['"]/);
   assert.doesNotMatch(script, /fetch\(['"]\/api\/roof-risk/);
   assert.match(script, /authFetch\(['"]\/api\/roof-risk/);
 });

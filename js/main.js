@@ -1130,14 +1130,6 @@ function gameLoop() {
 async function initApp(authenticatedUser) {
   console.log('🚀 智慧矿山数字孪生综合管控平台 启动中...');
 
-  const params = new URLSearchParams(window.location.search);
-  params.set('scene', params.get('scene') || 'v2');
-  params.set('view', params.get('view') || 'underground');
-  params.set('field', params.get('field') || 'risk');
-  params.set('portal', authenticatedUser.role);
-  const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash || ''}`;
-  window.history.replaceState({}, '', nextUrl);
-
   // 初始化灾害模块（注入场景特效）
   init(disasterEffects);
 

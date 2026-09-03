@@ -27,7 +27,7 @@ function loginErrorMessage(code, retryAfter) {
 
 function redirectToPortal(payload) {
   const role = payload?.user?.role;
-  const allowed = new Set(['enterprise', 'regulator', 'expert', 'super_admin']);
+  const allowed = new Set(['enterprise', 'regulator', 'expert', 'viewer', 'super_admin']);
   if (!allowed.has(role)) {
     setError('账号角色配置无效，请联系系统管理员。');
     return;

@@ -80,14 +80,16 @@ test('terrain is deterministic and the campus pad is level', () => {
   assert.equal(getGradedHeight(250, -60), getGradedHeight(310, -20));
 });
 
-test('mine v2 descriptor exposes surface and underground inspection modes', () => {
-  assert.deepEqual(Object.keys(CAMERA_PRESETS), ['surface', 'underground']);
-  assert.deepEqual(Object.keys(CONTROL_LIMITS), ['surface', 'underground']);
-  assert.ok(CONTROL_LIMITS.surface.maxDistance >= 600);
+test('mine v2 descriptor exposes overview, surface, underground, and exit inspection modes', () => {
+  assert.deepEqual(Object.keys(CAMERA_PRESETS), ['overview', 'surface', 'underground', 'exit']);
+  assert.deepEqual(Object.keys(CONTROL_LIMITS), ['overview', 'surface', 'underground', 'exit']);
+  assert.ok(CONTROL_LIMITS.overview.maxDistance >= 400);
+  assert.ok(CONTROL_LIMITS.surface.maxDistance >= 200);
   assert.equal(CONTROL_LIMITS.surface.minAzimuth, -Infinity);
   assert.equal(CONTROL_LIMITS.surface.maxAzimuth, Infinity);
   assert.equal(CONTROL_LIMITS.underground.minAzimuth, -Infinity);
   assert.equal(CONTROL_LIMITS.underground.maxAzimuth, Infinity);
+  assert.deepEqual(CONTROL_LIMITS.exit, CONTROL_LIMITS.underground);
 });
 
 test('mine atlas has exactly three enterable roadway zones', () => {
@@ -101,23 +103,26 @@ test('mine atlas has exactly three enterable roadway zones', () => {
 test('mine uses the approved meter-scale dimensions', () => {
   assert.deepEqual(MINE_V2_CONFIG.world, { width: 900, depth: 520, undergroundDepth: 210 });
   assert.deepEqual(MINE_V2_CONFIG.horizons, [-45, -95, -155]);
-  assert.equal(MINE_V2_CONFIG.workingFace.length, 140);
+  assert.equal(MINE_V2_CONFIG.workingFace.length, 20);
+  assert.deepEqual(MINE_V2_CONFIG.roadway, { minWidth: 4.5, maxWidth: 6, defaultHeight: 4.2 });
 });
 
 test('working-face role contract includes every disaster dependency', () => {
   assert.deepEqual(MINE_V2_CONFIG.requiredRoles, [
-    'atlasGeologyMass', 'coalSeamCutaway', 'mainAtlasWindow',
-    'mineScanTunnelBase',
     'workingFace', 'coalWall', 'hydraulicSupportArray', 'shearer',
     'scraperConveyor', 'stageLoader', 'stageLoaderSZZ1200', 'crusherPLM3000',
-    'undergroundBeltDSJ120', 'undergroundMineTrain', 'undergroundUtilityVehicle',
-    'pumpRoom', 'centralSubstation', 'mainVentilationFan', 'surfaceProcessingPlant',
+    'undergroundBeltDSJ120', 'transportRoadway',
+    'roofSeparation01', 'roofSeparation02', 'roofSeparation03',
+    'convergence01', 'anchorLoad01', 'supportPressure03', 'microseismic01', 'cctv01',
   ]);
 });
 
 test('all competition equipment rows have a V2 focus route and scene role', () => {
   const requiredRoles = new Set(MINE_V2_CONFIG.requiredRoles);
-  assert.equal(EQUIPMENT.length, 12);
+  assert.deepEqual(EQUIPMENT.map(item => item.id), [
+    'EQ-01', 'EQ-02', 'EQ-03', 'EQ-04', 'EQ-05', 'EQ-06',
+    'MON-01', 'MON-02', 'MON-03', 'MON-04', 'MON-05', 'MON-06', 'MON-07',
+  ]);
   for (const item of EQUIPMENT) {
     assert.ok(item.sceneObjectName, `${item.id} has no sceneObjectName`);
     assert.ok(item.id in EQUIPMENT_FOCUS_ZONES, `${item.id} has no V2 focus zone`);
@@ -127,11 +132,13 @@ test('all competition equipment rows have a V2 focus route and scene role', () =
   }
 });
 
-test('mine atlas contract exposes geology and cutaway roles', () => {
-  assert.ok(MINE_V2_CONFIG.requiredRoles.includes('atlasGeologyMass'));
-  assert.ok(MINE_V2_CONFIG.requiredRoles.includes('coalSeamCutaway'));
-  assert.ok(MINE_V2_CONFIG.requiredRoles.includes('mainAtlasWindow'));
-  assert.ok(MINE_V2_CONFIG.requiredRoles.includes('mineScanTunnelBase'));
+test('focused longwall contract exposes physical roadway and monitoring roles', () => {
+  for (const role of [
+    'transportRoadway', 'roofSeparation01', 'roofSeparation02', 'roofSeparation03',
+    'convergence01', 'anchorLoad01', 'supportPressure03', 'microseismic01', 'cctv01',
+  ]) {
+    assert.ok(MINE_V2_CONFIG.requiredRoles.includes(role), `${role} is missing from the focused role contract`);
+  }
 });
 
 test('main incline reaches all three production horizons', () => {

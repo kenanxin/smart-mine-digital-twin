@@ -1,8 +1,9 @@
 const ROLE_META = {
-  enterprise: { label: '企业端', actions: new Set(['advance', 'reset']) },
-  regulator: { label: '监管端', actions: new Set(['advance', 'archive']) },
-  expert: { label: '智库端', actions: new Set() },
-  super_admin: { label: '超级管理员', actions: new Set() },
+  enterprise: { label: '企业端', portal: 'enterprise', actions: new Set(['advance', 'reset']) },
+  regulator: { label: '监管端', portal: 'regulator', actions: new Set(['advance', 'archive']) },
+  expert: { label: '智库端', portal: 'expert', actions: new Set() },
+  viewer: { label: '只读用户', portal: 'expert', actions: new Set() },
+  super_admin: { label: '超级管理员', portal: 'super_admin', actions: new Set() },
 };
 
 function loginRedirect() {
@@ -16,7 +17,7 @@ export function portalUrlForRole(role, locationLike = window.location) {
   params.set('scene', params.get('scene') || 'v2');
   params.set('view', params.get('view') || 'underground');
   params.set('field', params.get('field') || 'risk');
-  params.set('portal', role);
+  params.set('portal', ROLE_META[role].portal);
   return `${locationLike.pathname || '/'}?${params.toString()}${locationLike.hash || ''}`;
 }
 
@@ -39,7 +40,7 @@ export function applyRolePortal(user) {
   const meta = ROLE_META[user.role];
   if (!meta) return false;
   document.body.classList.remove('portal-enterprise', 'portal-regulator', 'portal-expert');
-  document.body.classList.add(`portal-${user.role}`);
+  document.body.classList.add(`portal-${meta.portal}`);
 
   const displayName = document.getElementById('authDisplayName');
   const role = document.getElementById('authRole');

@@ -3,9 +3,14 @@ import test from 'node:test';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { assertAdminUserUpdateAllowed, createAppServer } = require('../server.js');
+const { assertAdminUserUpdateAllowed, createAppServer, portalUrl } = require('../server.js');
 
 const operator = { subject: 'admin-1', role: 'super_admin' };
+
+test('viewer sessions reuse the expert portal without gaining an expert role', () => {
+  assert.equal(portalUrl('viewer'), '/?scene=v2&view=underground&field=risk&portal=expert');
+  assert.equal(portalUrl('expert'), '/?scene=v2&view=underground&field=risk&portal=expert');
+});
 
 test('super administrator cannot demote or disable the current account', () => {
   assert.throws(

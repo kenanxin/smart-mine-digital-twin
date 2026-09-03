@@ -62,7 +62,8 @@ function redirect(res, location) {
 
 function portalUrl(role) {
   if (role === 'super_admin') return '/admin';
-  return `/?scene=v2&view=underground&field=risk&portal=${role}`;
+  const portal = role === 'viewer' ? 'expert' : role;
+  return `/?scene=v2&view=underground&field=risk&portal=${portal}`;
 }
 
 function assertAdminUserUpdateAllowed(operator, targetId, changes = {}) {
@@ -432,4 +433,5 @@ if (require.main === module) {
 module.exports = {
   assertAdminUserUpdateAllowed,
   createAppServer,
+  portalUrl,
 };
