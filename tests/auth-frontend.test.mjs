@@ -34,6 +34,12 @@ test('login script posts credentials and maps actionable error states', () => {
   assert.doesNotMatch(script, /localStorage|sessionStorage/);
 });
 
+test('login script allows super administrators to use the backend admin portal URL', () => {
+  const script = read('js/login.js');
+  assert.match(script, /allowed\s*=\s*new Set\(\[[^\]]*['"]super_admin['"]/s);
+  assert.match(script, /window\.location\.replace\(payload\.portalUrl/);
+});
+
 test('login background is a local non-empty raster asset', () => {
   const imagePath = path.join(ROOT, 'images', 'login-underground.jpg');
   assert.equal(fs.existsSync(imagePath), true);
