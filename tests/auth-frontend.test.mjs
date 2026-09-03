@@ -67,6 +67,13 @@ test('application header exposes identity and logout instead of a portal switch'
   assert.doesNotMatch(html, /id="portalSwitch"|data-portal=/);
 });
 
+test('dashboard loads the patched ECharts release consistently', () => {
+  const html = read('index.html');
+  const packageJson = JSON.parse(read('package.json'));
+  assert.match(html, /echarts@6\.1\.0\/dist\/echarts\.min\.js/);
+  assert.equal(packageJson.dependencies.echarts, '^6.1.0');
+});
+
 test('application bootstraps from the session before initializing protected features', () => {
   const script = read('js/main.js');
   assert.match(script, /from ['"]\.\/auth-client\.mjs['"]/);

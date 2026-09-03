@@ -9,7 +9,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "echarts": "^5.5.0",
+    "echarts": "^6.1.0",
     "three": "^0.160.0"
   }
 }
