@@ -35,3 +35,20 @@ test('Supabase admin user creation uses service role and validates role', async 
   assert.ok(calls.some(call => call.url.includes('/auth/v1/admin/users')));
   await assert.rejects(() => auth.createUser({ username: 'bad', password: 'password1', role: 'viewer' }), /有效邮箱/);
 });
+
+test('Supabase invalid password is reported as invalid credentials', async () => {
+  const auth = createSupabaseAuthService({
+    url: 'https://demo.supabase.co',
+    anonKey: 'anon',
+    fetchImpl: async () => ({
+      ok: false,
+      status: 400,
+      json: async () => ({ error_code: 'invalid_credentials' }),
+    }),
+  });
+
+  await assert.rejects(
+    () => auth.login({ username: 'operator@example.com', password: 'wrong-password' }),
+    error => error.code === 'INVALID_CREDENTIALS' && error.statusCode === 401,
+  );
+});

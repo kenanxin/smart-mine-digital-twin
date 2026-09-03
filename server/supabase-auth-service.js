@@ -29,6 +29,9 @@ function createSupabaseAuthService(options = {}) {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      if (path.startsWith('/auth/v1/token') && [400, 401].includes(response.status)) {
+        throw new AuthError('INVALID_CREDENTIALS', '用户名或密码不正确', 401);
+      }
       throw new AuthError('SUPABASE_AUTH_ERROR', '身份认证服务暂不可用，请稍后重试', 502, {
         providerStatus: response.status,
       });
