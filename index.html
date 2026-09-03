@@ -27,15 +27,15 @@
     <div class="header-status">
       <span class="status-dot online"></span> 系统运行中
     </div>
+    <div class="auth-identity">
+      <span class="auth-role" id="authRole">--</span>
+      <strong id="authDisplayName">正在验证</strong>
+    </div>
+    <button class="logout-button" id="logoutButton" type="button" aria-label="退出登录" title="退出登录">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>
+    </button>
   </div>
 </header>
-
-<!-- ============ 三端门户切换 ============ -->
-<nav class="portal-switch" id="portalSwitch" aria-label="三端门户切换">
-  <button class="portal-btn active" data-portal="enterprise">企业端</button>
-  <button class="portal-btn" data-portal="regulator">监管端</button>
-  <button class="portal-btn" data-portal="expert">智库端</button>
-</nav>
 
 <!-- ============ 顶板灾变演示工具栏 ============ -->
 <div class="disaster-toolbar" id="disasterPanel">
@@ -86,38 +86,38 @@
       </div>
       <div class="card-body">
         <div class="env-grid">
-          <div class="env-item">
-            <span class="env-label">顶板压力</span>
-            <span class="env-value warn" id="roofPressure">33.0 MPa</span>
-            <span class="env-bar"><i style="width:82%"></i></span>
+          <div class="env-item" data-metric-slot="0">
+            <span class="env-label">顶板离层速率</span>
+            <span class="env-value safe">--</span>
+            <span class="env-bar"><i style="width:0"></i></span>
           </div>
-          <div class="env-item">
-            <span class="env-label">顶板离层量</span>
-            <span class="env-value danger" id="roofSeparation">40.0 mm</span>
-            <span class="env-bar"><i style="width:88%"></i></span>
+          <div class="env-item" data-metric-slot="1">
+            <span class="env-label">锚杆轴力增量</span>
+            <span class="env-value safe">--</span>
+            <span class="env-bar"><i style="width:0"></i></span>
           </div>
-          <div class="env-item">
-            <span class="env-label">顶板下沉量</span>
-            <span class="env-value warn" id="roofSubsidence">31.2 mm</span>
-            <span class="env-bar"><i style="width:76%"></i></span>
+          <div class="env-item" data-metric-slot="2">
+            <span class="env-label">锚索轴力增量</span>
+            <span class="env-value safe">--</span>
+            <span class="env-bar"><i style="width:0"></i></span>
           </div>
-          <div class="env-item">
-            <span class="env-label">支架工作阻力</span>
-            <span class="env-value danger" id="supportResistance">11800 kN</span>
-            <span class="env-bar"><i style="width:91%"></i></span>
+          <div class="env-item" data-metric-slot="3">
+            <span class="env-label">支架阻力</span>
+            <span class="env-value safe">--</span>
+            <span class="env-bar"><i style="width:0"></i></span>
           </div>
-          <div class="env-item">
-            <span class="env-label">锚索载荷</span>
-            <span class="env-value warn" id="anchorLoad">186 kN</span>
-            <span class="env-bar"><i style="width:70%"></i></span>
+          <div class="env-item" data-metric-slot="4">
+            <span class="env-label">涌水量</span>
+            <span class="env-value safe">--</span>
+            <span class="env-bar"><i style="width:0"></i></span>
           </div>
-          <div class="env-item">
+          <div class="env-item" data-metric-slot="5">
             <span class="env-label">微震能量</span>
-            <span class="env-value danger" id="microseismicEnergy">1850 J</span>
-            <span class="env-bar"><i style="width:78%"></i></span>
+            <span class="env-value safe">--</span>
+            <span class="env-bar"><i style="width:0"></i></span>
           </div>
         </div>
-        <div class="simulation-note" id="simulationNote">比赛演示模拟阈值，非生产安全标准</div>
+        <div class="simulation-note" id="simulationNote">正在读取老师提供的真实监测数据</div>
         <div class="env-chart-wrap" id="envChart"></div>
       </div>
     </section>
@@ -152,7 +152,7 @@
         <em id="roofWarningLevel">红色预警</em>
       </div>
       <div class="roof-warning-score">
-        <b id="roofWarningScore">89.26</b>
+        <b id="roofWarningScore">92</b>
         <span>顶板综合风险指数</span>
       </div>
       <div class="roof-warning-grid">
@@ -192,7 +192,7 @@
         <div class="prod-chart-wrap" id="prodChart"></div>
         <div class="prod-stats">
           <div class="prod-stat">
-            <div class="prod-num danger" id="riskScore">89.26</div>
+            <div class="prod-num danger" id="riskScore">92</div>
             <div class="prod-unit">综合风险分值</div>
           </div>
           <div class="prod-stat">
@@ -229,7 +229,7 @@
       </div>
       <div class="card-body">
         <div class="closed-loop-summary">
-          <p><span>事件编号</span><b id="enterpriseLoopEvent">EVT-1206-20260822-001</b></p>
+          <p><span>事件编号</span><b id="enterpriseLoopEvent">--</b></p>
           <p><span>当前环节</span><b id="enterpriseLoopStep">企业端现场处置</b></p>
           <p><span>闭环进度</span><b id="enterpriseLoopProgress">83%</b></p>
         </div>
@@ -277,43 +277,38 @@
     <div>
       <span class="portal-kicker">监管端 · 区域安全态势</span>
       <h2>顶板灾变风险远程监管驾驶舱</h2>
-      <p>面向监管部门汇聚多矿井风险状态、预警闭环和处置进度，支持跨矿区分级督办。</p>
+      <p>面向监管部门汇聚老师真实监测数据中的四级代表事件、预警闭环和处置进度。</p>
     </div>
     <div class="portal-score danger">
-      <b>2</b>
-      <span>重点督办矿井</span>
+      <b id="regulatorPriorityCount">--</b>
+      <span>重点督办事件</span>
     </div>
   </div>
 
   <div class="portal-grid regulator-grid">
     <section class="portal-card wide">
       <div class="portal-card-head">
-        <strong>区域矿井风险总览</strong>
-        <span>6 座矿井在线</span>
+        <strong>真实风险样本总览</strong>
+        <span id="regulatorOverviewCount">读取中</span>
       </div>
-      <div class="mine-risk-list">
-        <div class="mine-risk-row danger"><span>1206 工作面</span><b>89.26</b><em>红色预警</em><i style="width:89.26%"></i></div>
-        <div class="mine-risk-row warn"><span>青龙煤矿 303 盘区</span><b>76</b><em>橙色预警</em><i style="width:76%"></i></div>
-        <div class="mine-risk-row watch"><span>东翼运输顺槽</span><b>58</b><em>黄色关注</em><i style="width:58%"></i></div>
-        <div class="mine-risk-row safe"><span>南翼回风巷</span><b>36</b><em>正常巡检</em><i style="width:36%"></i></div>
-        <div class="mine-risk-row safe"><span>北一采区辅运巷</span><b>31</b><em>正常巡检</em><i style="width:31%"></i></div>
-        <div class="mine-risk-row safe"><span>西翼轨道大巷</span><b>28</b><em>正常巡检</em><i style="width:28%"></i></div>
+      <div class="mine-risk-list" id="regulatorMineRiskList">
+        <p class="data-empty-state">正在读取真实风险事件</p>
       </div>
     </section>
 
     <section class="portal-card">
       <div class="portal-card-head">
         <strong>预警闭环</strong>
-        <span id="regulatorLoopEvent">EVT-1206-20260822-001</span>
+        <span id="regulatorLoopEvent">--</span>
       </div>
       <div class="closure-ring">
-        <b id="regulatorLoopProgress">83%</b>
+        <b id="regulatorLoopProgress">--</b>
         <span>处置闭环率</span>
       </div>
       <div class="portal-metrics compact">
-        <p><span>当前环节</span><b id="regulatorLoopStep">现场处置</b></p>
-        <p><span>负责端</span><b id="regulatorLoopOwner">企业端</b></p>
-        <p><span>监管状态</span><b id="regulatorLoopStatus">督办中</b></p>
+        <p><span>当前环节</span><b id="regulatorLoopStep">--</b></p>
+        <p><span>负责端</span><b id="regulatorLoopOwner">--</b></p>
+        <p><span>监管状态</span><b id="regulatorLoopStatus">--</b></p>
       </div>
     </section>
 
@@ -324,9 +319,9 @@
       </div>
       <div class="event-queue" id="regulatorEventQueue">
         <button class="event-queue-item active">
-          <span>EVT-1206-20260822-001</span>
-          <b>1206 工作面</b>
-          <em>红色预警 · 89.26</em>
+          <span>等待真实事件</span>
+          <b>--</b>
+          <em>--</em>
         </button>
       </div>
     </section>
@@ -334,12 +329,10 @@
     <section class="portal-card">
       <div class="portal-card-head">
         <strong>监管督办</strong>
-        <span id="regulatorAdviceStatus">自动生成</span>
+        <span id="regulatorAdviceStatus">等待真实事件</span>
       </div>
       <div class="supervision-list" id="regulatorSupervisionList">
-        <p><b>红色预警</b><span>要求企业端立即上传撤人、停机和封控反馈。</span></p>
-        <p><b>橙色预警</b><span>督促复核支架初撑力，提交现场巡查记录。</span></p>
-        <p><b>黄色关注</b><span>提高采样频率，持续观察离层和微震趋势。</span></p>
+        <p class="data-empty-state">正在读取真实处置状态</p>
       </div>
       <div class="closed-loop-actions portal-actions">
         <button class="loop-action-btn primary" data-loop-action="advance">监管复核通过</button>
@@ -375,11 +368,12 @@
     <div>
       <span class="portal-kicker">智库端 · 模型研判</span>
       <h2>顶板灾变智能预警模型解释平台</h2>
-      <p>面向专家组和算法团队展示多源指标融合、阈值配置、贡献因子和判别依据。</p>
+      <p>面向专家组和算法团队展示真实监测输入、四级概率、特征证据和判别依据。</p>
     </div>
-    <div class="portal-score">
-      <b id="expertConfidence">0.999</b>
+    <div class="portal-score" id="expertAuditCard">
+      <b id="expertConfidence">--</b>
       <span>模型置信度</span>
+      <em class="model-audit-state unavailable" id="expertAuditState">等待真实数据</em>
     </div>
   </div>
 
@@ -387,30 +381,23 @@
     <section class="portal-card">
       <div class="portal-card-head">
         <strong>多源输入</strong>
-        <span>XGBoost 8 维特征</span>
+        <span id="expertInputStatus">等待真实数据</span>
       </div>
-      <div class="factor-list" id="expertFeatureList">
-        <p><span>顶板离层速率</span><b>40.0 mm/h</b><i style="width:88%"></i></p>
-        <p><span>锚杆轴力增量</span><b>36.0 kN</b><i style="width:60%"></i></p>
-        <p><span>锚索轴力增量</span><b>50.0 kN</b><i style="width:72%"></i></p>
-        <p><span>支架阻力</span><b>11.8 MPa</b><i style="width:91%"></i></p>
-        <p><span>涌水量</span><b>36.0 m3/h</b><i style="width:72%"></i></p>
-        <p><span>微震能量</span><b>1850 J</b><i style="width:97%"></i></p>
-        <p><span>距水体/岩溶体距离</span><b>18.0 m</b><i style="width:78%"></i></p>
-        <p><span>数据质量</span><b>正常</b><i style="width:100%"></i></p>
+      <div class="factor-list" id="expertFactorList">
+        <p class="data-empty-state">真实数据接口读取中</p>
       </div>
     </section>
 
     <section class="portal-card">
       <div class="portal-card-head">
         <strong>模型输出概率</strong>
-        <span id="expertModelName">XGBoost</span>
+        <span id="expertModelStatus">XGBoost</span>
       </div>
-      <div class="weight-stack" id="expertProbabilityStack">
-        <div style="--w:0.01%"><span>低风险</span><b>0.00%</b></div>
-        <div style="--w:0.01%"><span>一般风险</span><b>0.01%</b></div>
-        <div style="--w:0.09%"><span>较大风险</span><b>0.09%</b></div>
-        <div style="--w:99.90%"><span>重大风险</span><b>99.90%</b></div>
+      <div class="weight-stack probability-stack" id="expertProbabilityList">
+        <div style="--w:0%"><span>低风险</span><b>--</b></div>
+        <div style="--w:0%"><span>一般风险</span><b>--</b></div>
+        <div style="--w:0%"><span>较大风险</span><b>--</b></div>
+        <div style="--w:0%"><span>重大风险</span><b>--</b></div>
       </div>
     </section>
 
@@ -420,9 +407,9 @@
         <span id="expertLoopEvent">当前输出：红色预警</span>
       </div>
       <div class="model-explain">
-        <p><b>规则层</b><span id="expertRuleLayer">离层量、支架阻力和微震能量均超过预警阈值，触发 L1 快速告警。</span></p>
-        <p><b>融合层</b><span id="expertFusionLayer">应力场与位移场热点在工作面出口叠加，综合风险指数升至 89.26。</span></p>
-        <p><b>闭环层</b><span id="expertLoopLayer">向监管端同步贡献因子与阈值解释。</span></p>
+        <p><b>规则层</b><span id="expertRuleLayer">正在读取真实记录的模型判别依据。</span></p>
+        <p><b>融合层</b><span id="expertFusionLayer">正在读取 XGBoost 综合风险输出。</span></p>
+        <p><b>闭环层</b><span id="expertLoopLayer">正在读取三端闭环状态。</span></p>
       </div>
     </section>
 
@@ -432,13 +419,13 @@
         <span id="expertSummaryStatus">同一事件追溯</span>
       </div>
       <div class="evidence-chain" id="expertEvidenceChain">
-        <p><b>触发指标</b><span>离层量、支架阻力、微震能量</span></p>
-        <p><b>贡献因子</b><span>应力 36%，位移 28%，支护 22%，微震 14%</span></p>
-        <p><b>处置链路</b><span>企业端识别 → 现场处置 → 监管督办 → 模型复核 → 闭环归档</span></p>
+        <p><b>触发指标</b><span>等待真实数据</span></p>
+        <p><b>特征证据</b><span>等待真实数据</span></p>
+        <p><b>处置链路</b><span>等待真实数据</span></p>
       </div>
       <div class="replay-summary" id="expertReplaySummary">
         <strong>事件复盘摘要</strong>
-        <p>当前事件处于企业端现场处置阶段，智库端已完成风险贡献解释，等待三端闭环归档。</p>
+        <p>正在读取当前真实事件的模型输出与闭环状态。</p>
       </div>
     </section>
 
@@ -449,18 +436,19 @@
       </div>
       <div class="api-status-grid">
         <p><span>接口版本</span><b id="apiVersion">RoofRisk API v1</b></p>
-        <p><span>数据源</span><b id="apiDataSource">标准化模拟多源数据</b></p>
-        <p><span>算法来源</span><b id="apiAlgorithmSource">算法组 XGBoost 预警模型</b></p>
-        <p><span>预测类别</span><b id="apiPredictedClass">重大风险</b></p>
-        <p><span>模型准确率</span><b id="apiModelAccuracy">99.33%</b></p>
-        <p><span>当前事件</span><b id="apiEventId">EVT-1206-20260822-001</b></p>
-        <p><span>当前工作面</span><b id="apiFaceId">1206</b></p>
+        <p><span>数据源</span><b id="apiDataSource">老师提供的真实监测数据</b></p>
+        <p><span>当前事件</span><b id="apiEventId">--</b></p>
+        <p><span>当前设备</span><b id="apiFaceId">--</b></p>
+        <p><span>真实记录</span><b id="apiRecordId">--</b></p>
+        <p><span>原始时间</span><b id="apiRecordTime">--</b></p>
+        <p><span>来源哈希</span><b id="apiSourceHash">--</b></p>
+        <p><span>模型准确率</span><b id="apiModelAccuracy">--</b></p>
       </div>
       <div class="api-table">
         <p><span>GET /api/roof-risk/current</span><b>当前多源风险态势</b></p>
         <p><span>POST /api/roof-risk/evaluate</span><b>多源指标融合评估</b></p>
         <p><span>GET /api/roof-risk/history</span><b>历史风险趋势查询</b></p>
-        <p><span>GET /api/roof-risk/explain</span><b>输出贡献因子与判别说明</b></p>
+        <p><span>GET /api/roof-risk/explain</span><b>输出特征证据与判别说明</b></p>
         <p><span>GET /api/roof-risk/events</span><b>三端预警闭环事件</b></p>
         <p><span>POST /api/roof-risk/select</span><b>切换三端当前事件</b></p>
         <p><span>POST /api/roof-risk/closed-loop/advance</span><b>闭环状态推进</b></p>

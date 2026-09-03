@@ -6,3 +6,14 @@ services:
     buildCommand: npm install
     startCommand: npm start
     autoDeploy: true
+    envVars:
+      - key: AUTH_PROVIDER
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false

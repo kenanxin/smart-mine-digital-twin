@@ -81,10 +81,9 @@ test('terrain is deterministic and the campus pad is level', () => {
 });
 
 test('mine v2 descriptor exposes surface and underground inspection modes', () => {
-  assert.deepEqual(Object.keys(CAMERA_PRESETS), ['overview', 'surface', 'underground', 'exit']);
-  assert.deepEqual(Object.keys(CONTROL_LIMITS), ['overview', 'surface', 'underground', 'exit']);
-  assert.ok(CONTROL_LIMITS.overview.maxDistance >= 420);
-  assert.ok(CONTROL_LIMITS.surface.maxDistance >= 220);
+  assert.deepEqual(Object.keys(CAMERA_PRESETS), ['surface', 'underground']);
+  assert.deepEqual(Object.keys(CONTROL_LIMITS), ['surface', 'underground']);
+  assert.ok(CONTROL_LIMITS.surface.maxDistance >= 600);
   assert.equal(CONTROL_LIMITS.surface.minAzimuth, -Infinity);
   assert.equal(CONTROL_LIMITS.surface.maxAzimuth, Infinity);
   assert.equal(CONTROL_LIMITS.underground.minAzimuth, -Infinity);
@@ -102,22 +101,23 @@ test('mine atlas has exactly three enterable roadway zones', () => {
 test('mine uses the approved meter-scale dimensions', () => {
   assert.deepEqual(MINE_V2_CONFIG.world, { width: 900, depth: 520, undergroundDepth: 210 });
   assert.deepEqual(MINE_V2_CONFIG.horizons, [-45, -95, -155]);
-  assert.equal(MINE_V2_CONFIG.workingFace.length, 20);
+  assert.equal(MINE_V2_CONFIG.workingFace.length, 140);
 });
 
 test('working-face role contract includes every disaster dependency', () => {
-  for (const role of [
+  assert.deepEqual(MINE_V2_CONFIG.requiredRoles, [
+    'atlasGeologyMass', 'coalSeamCutaway', 'mainAtlasWindow',
+    'mineScanTunnelBase',
     'workingFace', 'coalWall', 'hydraulicSupportArray', 'shearer',
     'scraperConveyor', 'stageLoader', 'stageLoaderSZZ1200', 'crusherPLM3000',
-    'undergroundBeltDSJ120', 'transportRoadway',
-    'roofSeparation01', 'roofSeparation02', 'roofSeparation03',
-    'convergence01', 'anchorLoad01', 'supportPressure03', 'microseismic01', 'cctv01',
-  ]) assert.ok(MINE_V2_CONFIG.requiredRoles.includes(role), `${role} missing from V2 role contract`);
+    'undergroundBeltDSJ120', 'undergroundMineTrain', 'undergroundUtilityVehicle',
+    'pumpRoom', 'centralSubstation', 'mainVentilationFan', 'surfaceProcessingPlant',
+  ]);
 });
 
 test('all competition equipment rows have a V2 focus route and scene role', () => {
   const requiredRoles = new Set(MINE_V2_CONFIG.requiredRoles);
-  assert.equal(EQUIPMENT.length, 13);
+  assert.equal(EQUIPMENT.length, 12);
   for (const item of EQUIPMENT) {
     assert.ok(item.sceneObjectName, `${item.id} has no sceneObjectName`);
     assert.ok(item.id in EQUIPMENT_FOCUS_ZONES, `${item.id} has no V2 focus zone`);

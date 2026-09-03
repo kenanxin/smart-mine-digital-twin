@@ -1,196 +1,159 @@
-# RoofRisk API v1 多源顶板风险接口标准
+# RoofRisk API v1 真实顶板风险接口
 
-## 1. 设计目标
+## 1. 数据与运行架构
 
-本接口标准用于统一顶板灾变智能预警平台中的多源监测数据、模型输出、风险解释和处置闭环数据。当前演示环境使用标准化模拟数据，真实传感器、数据库或算法组模型服务只要按本文档字段输出，即可替换模拟数据源。
+当前数据源为老师提供的真实监测 CSV，标识固定为 `teacher_real_csv_xgboost`。规范化文件 `data/teacher_roof_monitoring.csv` 包含 20,000 行、11 列，SHA-256 为 `86D4C2FB192721B2745F00076AEB00CF351C654ED936DDB098BFA6217E30AC6A`。
 
-## 2. 接口列表
+Python 仅用于发布前构建：按设备和时间排序、以 600 秒间隔切段、执行卡尔曼平滑和标准化，再运行现有 XGBoost 模型。结果写入 `data/roof-risk-dataset.json`。生产运行时只需 Node，不调用 Python，也不重新推理。
+
+```text
+teacher_roof_monitoring.csv
+-> 构建期预处理与 XGBoost
+-> roof-risk-dataset.json
+-> Node RoofRisk API v1
+-> 企业端 / 监管端 / 智库端
+```
+
+## 2. 登录与权限
+
+所有 `/api/roof-risk/*` 请求都必须携带登录接口签发的 `roofrisk_session` Cookie。未登录或会话过期返回：
+
+```json
+{
+  "error": {
+    "code": "AUTH_REQUIRED",
+    "message": "请先登录"
+  }
+}
+```
+
+响应状态为 `401`。闭环动作还会按账号角色校验，越权返回 `403 FORBIDDEN`。
+
+| 闭环动作 | 企业端 | 监管端 | 智库端 |
+|---|---:|---:|---:|
+| `advance` | 允许 | 允许 | 禁止 |
+| `archive` | 禁止 | 允许 | 禁止 |
+| `reset` | 允许 | 禁止 | 禁止 |
+
+所有角色均可使用读取、事件选择和按记录查询接口。
+
+## 3. 接口列表
 
 | 方法 | 路径 | 用途 |
 |---|---|---|
-| GET | `/api/roof-risk/current` | 查询当前工作面最新多源指标、综合风险和处置状态 |
-| GET | `/api/roof-risk/history` | 查询当前事件或工作面的风险趋势 |
-| GET | `/api/roof-risk/explain` | 查询模型贡献因子、判别依据和处置建议 |
-| POST | `/api/roof-risk/evaluate` | 接收多源指标并返回模型评估结果 |
-| GET | `/api/roof-risk/events` | 查询预警事件和闭环状态列表 |
-| POST | `/api/roof-risk/select` | 切换三端共享的当前预警事件 |
-| POST | `/api/roof-risk/closed-loop/advance` | 推进当前事件的闭环处置状态 |
+| GET | `/api/roof-risk/current` | 当前真实记录、模型输出和闭环状态 |
+| GET | `/api/roof-risk/history` | 当前代表记录的 24 点时间窗口 |
+| GET | `/api/roof-risk/explain` | 四级概率、标签审计与三项特征证据 |
+| POST | `/api/roof-risk/evaluate` | 按 `record_id` 查询预计算模型结果 |
+| GET | `/api/roof-risk/events` | 四个风险等级的代表事件 |
+| POST | `/api/roof-risk/select` | 切换三端共享的当前事件 |
+| POST | `/api/roof-risk/closed-loop/advance` | 推进当前事件闭环状态 |
 
-## 3. 当前风险接口
-
-### 3.1 请求
+## 4. 当前风险
 
 ```http
 GET /api/roof-risk/current
 ```
 
-### 3.2 返回示例
+关键返回结构：
 
 ```json
 {
   "api_version": "RoofRisk API v1",
-  "data_source": "standardized_simulated_multisource",
-  "mine_id": "M01",
-  "mine_name": "示范矿井",
-  "face_id": "1206",
-  "event_id": "EVT-1206-20260822-001",
-  "timestamp": "2026-08-22 09:30:00",
+  "data_source": "teacher_real_csv_xgboost",
+  "event_id": "REAL-SEVERE-001",
+  "face_id": "监测1",
+  "timestamp": "2025/11/8 14:22",
   "metrics": {
-    "roof_stress": { "value": 33.0, "unit": "MPa", "status": "warning" },
-    "separation": { "value": 40.0, "unit": "mm", "status": "danger" },
-    "subsidence": { "value": 31.2, "unit": "mm", "status": "warning" },
-    "support_resistance": { "value": 11800, "unit": "kN", "status": "danger" },
-    "anchor_load": { "value": 186, "unit": "kN", "status": "warning" },
-    "microseismic_energy": { "value": 1850, "unit": "J", "status": "danger" },
-    "water_inflow": { "value": 36.0, "unit": "m3/h", "status": "warning" },
-    "distance_to_water": { "value": 18.0, "unit": "m", "status": "danger" },
-    "data_quality": { "value": "正常", "unit": "", "status": "safe" }
+    "roof_separation_rate": {"value": 4.24, "model_value": 4.24, "unit": "mm/d", "status": "safe"},
+    "bolt_axial_force_increment": {"value": 8.1, "model_value": 8.1, "unit": "kN", "status": "safe"},
+    "cable_axial_force_increment": {"value": 8.33, "model_value": 8.33, "unit": "kN", "status": "safe"},
+    "support_resistance": {"value": 0.77, "model_value": 0.77, "unit": "MPa", "status": "safe"},
+    "water_inflow": {"value": 50.43, "model_value": 50.43, "unit": "m3/h", "status": "warning"},
+    "microseismic_energy": {"value": 549.77, "model_value": 549.77, "unit": "J", "status": "warning"},
+    "distance_to_water": {"value": -103.11, "model_value": -103.11, "unit": "m", "status": "danger"},
+    "data_quality": {"value": "正常", "unit": null, "status": "safe"}
   },
-  "risk": {
-    "score": 89.26,
-    "level": "red",
-    "stage": "顶板垮落预警",
-    "trigger": ["separation", "support_resistance", "microseismic_energy"],
-    "explanation": "离层量、支架阻力和微震能量多源耦合异常，应力场与位移场热点在工作面出口叠加。",
-    "contribution": {
-      "stress": 0.2053,
-      "displacement": 0.3762,
-      "support": 0.2815,
-      "microseismic": 0.137
-    }
-  },
-  "disposal": {
-    "status": "processing",
-    "actions": ["立即停机", "人员撤离", "封控出口", "补强支护"],
-    "closed_loop_rate": 0.83
-  },
-  "algorithm": {
-    "source": "local_python_bridge",
-    "source_label": "算法组 XGBoost 预警模型",
-    "model_path": "competition_submission/03-核心算法代码/roof_risk_model.py",
+  "model_output": {
     "best_model": "xgboost",
-    "model_family": "XGBoost 顶板灾变四级预警模型",
     "model_accuracy": 0.99325,
+    "probabilities": {"low": 0.00002, "general": 0.00001, "major": 0.00008, "severe": 0.99989},
+    "confidence": 0.99989295,
+    "true_class": "重大风险",
     "predicted_class": "重大风险",
-    "warning_level": "红色预警 (紧急撤离)",
-    "max_probability": 0.999017,
-    "probabilities": {
-      "低风险": 0.000044,
-      "一般风险": 0.000078,
-      "较大风险": 0.000861,
-      "重大风险": 0.999017
-    },
-    "risk_score": 89.26,
-    "risk_level": "red",
-    "stage": "顶板垮落预警",
-    "agent_workflow": [
-      { "agent_id": "A1", "name": "感知预警 Agent", "status": "success" },
-      { "agent_id": "A2", "name": "知识检索 Agent", "status": "success" },
-      { "agent_id": "A3", "name": "调度决策 Agent", "status": "success" },
-      { "agent_id": "A5", "name": "资源评估 Agent", "status": "success" },
-      { "agent_id": "A4", "name": "协同管控 Agent", "status": "waiting_human" },
-      { "agent_id": "A6", "name": "反思迭代 Agent", "status": "partial" }
-    ],
-    "actions": ["立即停机撤人", "封控高风险区域", "执行补强支护和持续监测"]
+    "matches_label": true,
+    "record_id": "REC-202511081422-01751"
+  },
+  "feature_evidence": [
+    {"key": "distance_to_water", "label": "距水体/岩溶体距离", "standardized_value": -3.2, "contribution": 0.41}
+  ],
+  "provenance": {
+    "source_name": "teacher_roof_monitoring.csv",
+    "source_sha256": "86D4C2FB192721B2745F00076AEB00CF351C654ED936DDB098BFA6217E30AC6A",
+    "source_row_count": 20000,
+    "original_timestamp": "2025/11/8 14:22",
+    "device_id": "监测1",
+    "record_id": "REC-202511081422-01751"
   }
 }
 ```
 
-## 4. 字段说明
+`value` 是界面展示的原始测量值，`model_value` 是卡尔曼平滑后进入模型的值。`feature_evidence` 是标准化特征绝对值排序，不等同于 SHAP。
 
-| 字段 | 类型 | 说明 |
+## 5. 八项输入
+
+| key | 中文名称 | 单位 |
 |---|---|---|
-| api_version | string | 接口版本 |
-| data_source | string | 数据来源，演示环境为标准化模拟多源数据 |
-| mine_id | string | 矿井编号 |
-| face_id | string | 工作面或巷道编号 |
-| event_id | string | 预警事件编号，三端共享同一事件 |
-| timestamp | string | 数据时间 |
-| metrics.roof_stress | object | 顶板应力，单位 MPa |
-| metrics.separation | object | 顶板离层量，单位 mm |
-| metrics.subsidence | object | 顶板下沉量，单位 mm |
-| metrics.support_resistance | object | 支架工作阻力，单位 kN |
-| metrics.anchor_load | object | 锚索载荷，单位 kN |
-| metrics.microseismic_energy | object | 微震能量，单位 J |
-| metrics.water_inflow | object | 涌水量，单位 m3/h |
-| metrics.distance_to_water | object | 距水体/岩溶体距离，单位 m |
-| metrics.data_quality | object | 数据质量标记 |
-| risk.score | number | 综合风险分值，范围 0-100 |
-| risk.level | string | 风险等级：green、attention、yellow、orange、red |
-| risk.stage | string | 灾变阶段 |
-| risk.trigger | array | 触发指标 |
-| risk.explanation | string | 判别依据 |
-| risk.contribution | object | 模型贡献因子 |
-| disposal.status | string | 处置状态：pending、confirmed、processing、closed |
-| disposal.actions | array | 推荐处置动作 |
-| disposal.closed_loop_rate | number | 闭环率 |
-| algorithm.source | string | 算法来源标识 |
-| algorithm.source_label | string | 页面展示用算法来源 |
-| algorithm.model_path | string | 实际调用的算法文件 |
-| algorithm.best_model | string | 算法组最佳模型，当前为 xgboost |
-| algorithm.model_family | string | 模型族名称 |
-| algorithm.model_accuracy | number | 算法组离线评估准确率 |
-| algorithm.predicted_class | string | 算法组四级风险分类结果 |
-| algorithm.warning_level | string | 算法组预警等级 |
-| algorithm.max_probability | number | 最大类别概率，即模型置信度 |
-| algorithm.probabilities | object | 四级风险概率 |
-| algorithm.input_features | object | 算法组 8 维输入特征 |
-| algorithm.agent_workflow | array | 六 Agent 预警闭环执行摘要 |
-| algorithm.risk_score | number | 算法输出风险分值 |
-| algorithm.risk_level | string | 算法输出风险等级 |
-| algorithm.stage | string | 算法输出阶段 |
+| `roof_separation_rate` | 顶板离层速率 | mm/d |
+| `bolt_axial_force_increment` | 锚杆轴力增量 | kN |
+| `cable_axial_force_increment` | 锚索轴力增量 | kN |
+| `support_resistance` | 支架阻力 | MPa |
+| `water_inflow` | 涌水量 | m3/h |
+| `microseismic_energy` | 微震能量 | J |
+| `distance_to_water` | 距水体/岩溶体距离 | m |
+| `data_quality` | 数据质量 | 无 |
 
-## 5. 事件状态中心与闭环接口
+概率键 `low`、`general`、`major`、`severe` 分别对应低风险、一般风险、较大风险、重大风险。
 
-### 5.1 事件列表
+## 6. 按记录查询
 
 ```http
-GET /api/roof-risk/events
+POST /api/roof-risk/evaluate
+Content-Type: application/json
+
+{"record_id":"REC-202511081422-01751"}
 ```
 
-返回字段包含 `selected_event_id` 和 `events`。监管端事件队列读取该接口；`selected_event_id` 表示当前三端共享事件。
+该接口不接收任意传感器数值，也不在 Node 进程中重新运行模型。它按稳定 `record_id` 返回构建期已计算的真实输入、概率、标签审计、特征证据与来源信息。缺少 `record_id` 返回 400，记录不存在返回 404。
 
-### 5.2 切换当前事件
+## 7. 事件与闭环
+
+四个稳定事件分别为 `REAL-LOW-001`、`REAL-GENERAL-001`、`REAL-MAJOR-001`、`REAL-SEVERE-001`。服务默认选中重大风险代表事件。
 
 ```http
 POST /api/roof-risk/select
 Content-Type: application/json
 
-{ "event_id": "EVT-QL303-20260822-002" }
+{"event_id":"REAL-MAJOR-001"}
 ```
 
-切换后，`/api/roof-risk/current`、`/api/roof-risk/explain`、监管端闭环卡片和智库端复盘摘要均围绕同一事件返回，避免三端页面各自维护独立状态。
-
-### 5.3 推进闭环状态
+切换后 `/current`、`/history`、`/explain` 和三端页面共同指向同一真实记录。
 
 ```http
 POST /api/roof-risk/closed-loop/advance
 Content-Type: application/json
 
-{ "action": "advance" }
+{"action":"advance"}
 ```
 
-`action` 可取：
+`action` 可为 `advance`、`archive` 或 `reset`。闭环状态单独保存在内存中，推进闭环不会修改原始测量、模型输出或 `record_id`。
 
-| action | 说明 |
-|---|---|
-| `advance` | 当前事件进入下一闭环阶段 |
-| `archive` | 当前事件直接闭环归档 |
-| `reset` | 演示环境重置为主预警事件初始状态 |
+## 8. 错误与前端约定
 
-## 6. 真实数据接入约定
+参数错误和未找到错误返回结构化 JSON：
 
-真实数据接入时，传感器、数据库、CSV/Excel 文件或队友算法服务均可作为上游，只需转换为本文档字段即可。平台展示层不关心数据来自模拟器、数据库还是硬件，只读取统一 JSON。
-
-建议接入路径：
-
-```text
-传感器/数据库/CSV/算法服务
--> 数据适配器
--> RoofRisk API v1 标准 JSON
--> 三维孪生展示 / 三端管控 / 报告截图
+```json
+{"error":{"code":"RECORD_NOT_FOUND","message":"Record not found: missing","record_id":"missing"}}
 ```
 
-## 7. 与辅助接口原型的关系
-
-辅助接口原型 `D:\矿业\roof-warning-demo` 已提供 `/api/data`、数据源适配和事件记录能力。`RoofRisk API v1` 是面向最终三端平台的统一字段标准，可兼容 `stress`、`displacement`、`support_pressure`、`risk_score`、`trend`、`risk_message` 等历史字段，并扩展锚索、微震、事件闭环和模型解释字段。
+前端请求失败时显示“真实数据接口暂不可用”和 `--`，不会回退到模拟数值。六阶段灾变演示是独立的确定性演示模式，结束或复位后会重新读取当前选中的真实事件。

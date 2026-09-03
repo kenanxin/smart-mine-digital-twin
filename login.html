@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>系统登录 | 煤矿顶板灾变智能预警</title>
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <main class="login-shell">
+    <section class="mine-identity" aria-labelledby="systemTitle">
+      <div class="brand-mark">
+        <img src="images/logo.jpg" alt="" aria-hidden="true">
+        <span>RoofRisk</span>
+      </div>
+      <div class="title-block">
+        <p class="title-kicker"><span></span> 智慧矿山安全管控</p>
+        <h1 id="systemTitle">煤矿顶板灾变<br>智能预警与可视化决策系统</h1>
+        <p>Digital Twin Roof Disaster Early Warning &amp; Decision Platform</p>
+      </div>
+      <div class="scene-caption" aria-hidden="true">
+        <span>井下工作面</span>
+        <i></i>
+        <span>多源监测在线</span>
+      </div>
+    </section>
+
+    <section class="access-panel" aria-labelledby="loginTitle">
+      <div class="access-status"><span></span> 身份认证服务在线</div>
+      <div class="access-heading">
+        <p>统一访问入口</p>
+        <h2 id="loginTitle">登录系统</h2>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="field-group">
+          <label for="username">账号</label>
+          <div class="field-control">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 21a8 8 0 0 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+            <input id="username" name="username" type="text" autocomplete="username" maxlength="64" placeholder="请输入账号" required autofocus>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="password">密码</label>
+          <div class="field-control">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required>
+            <button class="password-toggle" id="togglePassword" type="button" aria-label="显示密码" title="显示密码" aria-pressed="false">
+              <svg class="eye-open" aria-hidden="true" viewBox="0 0 24 24"><path d="M2.1 12a10.8 10.8 0 0 1 19.8 0 10.8 10.8 0 0 1-19.8 0Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-closed" aria-hidden="true" viewBox="0 0 24 24"><path d="m2 2 20 20M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.2A11 11 0 0 1 22 12a10.8 10.8 0 0 1-2 3M6.6 6.6A11.6 11.6 0 0 0 2 12a10.8 10.8 0 0 0 14.1 6.1"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <p class="login-error" id="loginError" role="alert" aria-live="polite"></p>
+
+        <button class="login-submit" id="loginSubmit" type="submit">
+          <span>进入系统</span>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </form>
+
+      <footer class="access-footer">
+        <span>RoofRisk API v1</span>
+        <span>会话受安全保护</span>
+      </footer>
+    </section>
+  </main>
+  <script src="js/login.js" defer></script>
+</body>
+</html>
