@@ -99,4 +99,6 @@ test('admin page protects the current super administrator and supports password 
   assert.match(script, /超级管理员/);
   assert.match(script, /reset-password/);
   assert.match(script, /escapeHtml/);
+  assert.match(script, /const form = event\.currentTarget/);
+  assert.doesNotMatch(script, /await api\([^;]+;\s*event\.currentTarget\.reset\(\)/s);
 });

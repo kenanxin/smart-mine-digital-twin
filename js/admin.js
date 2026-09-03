@@ -129,10 +129,11 @@ async function refresh() {
 
 document.getElementById('createForm').addEventListener('submit', async event => {
   event.preventDefault();
-  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const form = event.currentTarget;
+  const data = Object.fromEntries(new FormData(form));
   try {
     await api('/api/admin/users', { method: 'POST', body: JSON.stringify(data) });
-    event.currentTarget.reset();
+    form.reset();
     await refresh();
     setStatus('账户创建成功');
   } catch (error) {
