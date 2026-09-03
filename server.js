@@ -61,7 +61,21 @@ function redirect(res, location) {
 }
 
 function portalUrl(role) {
+  if (role === 'super_admin') return '/admin';
   return `/?scene=v2&view=underground&field=risk&portal=${role}`;
+}
+
+function assertAdminUserUpdateAllowed(operator, targetId, changes = {}) {
+  if (!operator?.subject || String(targetId) !== String(operator.subject)) return;
+  const changesRole = changes.role !== undefined && changes.role !== 'super_admin';
+  const changesStatus = changes.status !== undefined && changes.status !== 'active';
+  if (changesRole || changesStatus) {
+    throw new AuthError(
+      'ADMIN_SELF_PROTECTED',
+      '不能修改当前超级管理员的角色或状态',
+      409,
+    );
+  }
 }
 
 function requestIsSecure(req) {
@@ -235,7 +249,13 @@ function createAppServer(options = {}) {
         }
         if (pathname === '/api/admin/users' && req.method === 'GET') {
           if (!authService.listUsers) throw new AuthError('ADMIN_NOT_CONFIGURED', '当前认证服务不支持用户管理', 503);
-          sendJson(res, { users: await authService.listUsers() });
+          const users = await authService.listUsers();
+          sendJson(res, {
+            users: users.map(user => ({
+              ...user,
+              isSelf: Boolean(session.user.subject) && String(user.id) === String(session.user.subject),
+            })),
+          });
           return;
         }
         if (pathname === '/api/admin/users' && req.method === 'POST') {
@@ -249,7 +269,10 @@ function createAppServer(options = {}) {
         const userMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)$/);
         if (userMatch && req.method === 'PATCH') {
           if (!authService.updateUser) throw new AuthError('ADMIN_NOT_CONFIGURED', '当前认证服务不支持用户管理', 503);
-          const user = await authService.updateUser(decodeURIComponent(userMatch[1]), await readJsonBody(req));
+          const targetId = decodeURIComponent(userMatch[1]);
+          const changes = await readJsonBody(req);
+          assertAdminUserUpdateAllowed(session.user, targetId, changes);
+          const user = await authService.updateUser(targetId, changes);
           if (authService.recordAudit) await authService.recordAudit(session.user.subject, 'user.update', 'profile', user.id, { changes: user });
           sendJson(res, { user });
           return;
@@ -407,5 +430,6 @@ if (require.main === module) {
 }
 
 module.exports = {
+  assertAdminUserUpdateAllowed,
   createAppServer,
 };

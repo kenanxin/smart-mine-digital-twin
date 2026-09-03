@@ -1,1 +1,44 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>超级管理员 · 智慧矿山</title><link rel="stylesheet" href="css/style.css"><style>body.admin-page{background:#07131d;color:#e8f2f5;font-family:Arial,"Microsoft YaHei",sans-serif;margin:0}.admin-shell{max-width:1180px;margin:0 auto;padding:28px 22px}.admin-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #25404b;padding-bottom:18px}.admin-head h1{font-size:24px;margin:0}.admin-head p{color:#91aab3;margin:8px 0 0}.admin-actions{display:flex;gap:10px}.admin-btn{border:1px solid #326171;background:#102b36;color:#dffaff;padding:9px 14px;border-radius:5px;cursor:pointer}.admin-btn.primary{background:#0c879b;border-color:#1ec8dc}.admin-grid{display:grid;grid-template-columns:1.4fr .8fr;gap:18px;margin-top:20px}.admin-panel{background:#0c202a;border:1px solid #203e49;padding:18px;border-radius:6px}.admin-panel h2{font-size:16px;margin:0 0 14px}.admin-table{width:100%;border-collapse:collapse;font-size:13px}.admin-table th,.admin-table td{padding:10px 8px;border-bottom:1px solid #1d3943;text-align:left}.admin-table th{color:#8eabb4;font-weight:500}.admin-table select,.admin-panel input{background:#081923;color:#e8f2f5;border:1px solid #2b5360;padding:8px;border-radius:4px;width:100%;box-sizing:border-box}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.form-row.full{grid-template-columns:1fr}.form-actions{display:flex;justify-content:flex-end}.admin-status{min-height:22px;color:#82e4bd;margin:8px 0}.admin-status.error{color:#ff9a8f}@media(max-width:800px){.admin-grid{grid-template-columns:1fr}.admin-head{align-items:flex-start;gap:12px;flex-direction:column}.admin-table{font-size:12px}}</style></head><body class="admin-page"><main class="admin-shell"><header class="admin-head"><div><h1>超级管理员中心</h1><p>账户、角色与审计日志</p></div><div class="admin-actions"><button class="admin-btn" id="refreshBtn">刷新</button><button class="admin-btn" id="logoutBtn">退出登录</button></div></header><div id="status" class="admin-status"></div><section class="admin-grid"><div class="admin-panel"><h2>用户账户</h2><div id="usersWrap">正在读取...</div></div><div class="admin-panel"><h2>创建账户</h2><form id="createForm"><div class="form-row full"><input name="username" type="email" placeholder="登录邮箱" required></div><div class="form-row"><input name="displayName" placeholder="显示名称" required><input name="organization" placeholder="所属组织"></div><div class="form-row"><input name="password" type="password" minlength="8" placeholder="初始密码（至少 8 位）" required><select name="role"><option value="enterprise">企业端</option><option value="regulator">监管端</option><option value="expert">智库端</option><option value="viewer" selected>只读用户</option></select></div><div class="form-actions"><button class="admin-btn primary" type="submit">创建账户</button></div></form></div><div class="admin-panel"><h2>最近审计日志</h2><div id="logsWrap">正在读取...</div></div></section></main><script type="module" src="js/admin.js"></script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>超级管理员 · 智慧矿山</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body.admin-page{background:#07131d;color:#e8f2f5;font-family:Arial,"Microsoft YaHei",sans-serif;margin:0}.admin-shell{max-width:1180px;margin:0 auto;padding:28px 22px}.admin-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #25404b;padding-bottom:18px}.admin-head h1{font-size:24px;margin:0}.admin-head p{color:#91aab3;margin:8px 0 0}.admin-actions,.form-actions,.row-actions{display:flex;gap:10px}.admin-btn{border:1px solid #326171;background:#102b36;color:#dffaff;padding:9px 14px;border-radius:5px;cursor:pointer}.admin-btn:hover{border-color:#4b8da0}.admin-btn:focus-visible{outline:2px solid #63d8e7;outline-offset:2px}.admin-btn.primary{background:#0c879b;border-color:#1ec8dc}.admin-btn.compact{padding:7px 10px;white-space:nowrap}.admin-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-top:20px}.admin-panel{background:#0c202a;border:1px solid #203e49;padding:18px;border-radius:6px}.admin-panel h2{font-size:16px;margin:0 0 14px}.admin-users{grid-column:1/-1}.table-wrap{overflow-x:auto}.admin-table{width:100%;min-width:760px;border-collapse:collapse;font-size:13px}.admin-table th,.admin-table td{padding:10px 8px;border-bottom:1px solid #1d3943;text-align:left;vertical-align:middle}.admin-table th{color:#8eabb4;font-weight:500}.admin-table select,.admin-panel input,.admin-dialog input{background:#081923;color:#e8f2f5;border:1px solid #2b5360;padding:8px;border-radius:4px;width:100%;box-sizing:border-box}.admin-fixed-value{display:flex;flex-direction:column;gap:3px}.admin-fixed-value small,.admin-table small,.audit-item small{color:#91aab3}.field-label{display:block;color:#a9bec5;font-size:12px;margin:0 0 5px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.form-row.full{grid-template-columns:1fr}.form-actions{justify-content:flex-end}.admin-status{min-height:22px;color:#82e4bd;margin:8px 0}.admin-status.error{color:#ff9a8f}.audit-item{margin:0;padding:10px 0;border-bottom:1px solid #1d3943;line-height:1.5}.admin-dialog{width:min(420px,calc(100vw - 32px));padding:0;border:1px solid #315461;border-radius:6px;background:#0c202a;color:#e8f2f5}.admin-dialog::backdrop{background:rgba(2,10,14,.72)}.dialog-body{padding:20px}.dialog-body h2{font-size:18px;margin:0 0 8px}.dialog-body p{color:#91aab3;margin:0 0 16px;overflow-wrap:anywhere}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}@media(max-width:800px){.admin-grid{grid-template-columns:1fr}.admin-head{align-items:flex-start;gap:12px;flex-direction:column}.admin-panel{grid-column:1}.admin-table{font-size:12px}.form-row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body class="admin-page">
+  <main class="admin-shell">
+    <header class="admin-head">
+      <div><h1>超级管理员中心</h1><p>账户、角色与审计日志</p></div>
+      <div class="admin-actions"><button class="admin-btn" id="refreshBtn">刷新</button><button class="admin-btn" id="logoutBtn">退出登录</button></div>
+    </header>
+    <div id="status" class="admin-status" role="status" aria-live="polite"></div>
+    <section class="admin-grid">
+      <div class="admin-panel admin-users"><h2>用户账户</h2><div id="usersWrap" class="table-wrap">正在读取...</div></div>
+      <div class="admin-panel">
+        <h2>创建账户</h2>
+        <form id="createForm">
+          <div class="form-row full"><label><span class="field-label">登录邮箱</span><input name="username" type="email" autocomplete="off" required></label></div>
+          <div class="form-row"><label><span class="field-label">显示名称</span><input name="displayName" required></label><label><span class="field-label">所属组织</span><input name="organization"></label></div>
+          <div class="form-row"><label><span class="field-label">初始密码</span><input name="password" type="password" minlength="8" autocomplete="new-password" required></label><label><span class="field-label">角色</span><select name="role"><option value="enterprise">企业端</option><option value="regulator">监管端</option><option value="expert">智库端</option><option value="viewer" selected>只读用户</option></select></label></div>
+          <div class="form-actions"><button class="admin-btn primary" type="submit">创建账户</button></div>
+        </form>
+      </div>
+      <div class="admin-panel"><h2>最近审计日志</h2><div id="logsWrap">正在读取...</div></div>
+    </section>
+  </main>
+  <dialog id="resetDialog" class="admin-dialog">
+    <form id="resetForm" class="dialog-body">
+      <h2>重置账户密码</h2>
+      <p id="resetTarget"></p>
+      <label for="resetPassword" class="field-label">新密码（至少 8 位）</label>
+      <input id="resetPassword" name="password" type="password" minlength="8" autocomplete="new-password" required>
+      <div class="dialog-actions"><button class="admin-btn" id="cancelReset" type="button">取消</button><button class="admin-btn primary" type="submit">确认重置</button></div>
+    </form>
+  </dialog>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

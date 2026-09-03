@@ -75,3 +75,14 @@ test('auth client owns role URLs, unauthorized redirects, logout, and action vis
   assert.match(script, /data-loop-action/);
   assert.doesNotMatch(script, /localStorage|sessionStorage/);
 });
+
+test('admin page protects the current super administrator and supports password reset', () => {
+  const html = read('admin.html');
+  const script = read('js/admin.js');
+  assert.match(html, /id="resetDialog"/);
+  assert.match(html, /id="resetPassword"[^>]*minlength="8"/);
+  assert.match(script, /user\.isSelf/);
+  assert.match(script, /超级管理员/);
+  assert.match(script, /reset-password/);
+  assert.match(script, /escapeHtml/);
+});
