@@ -1,6 +1,26 @@
 {
   "rewrites": [
     {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "https://smart-mine-v2-balanced.onrender.com/admin"
+    },
+    {
+      "source": "/admin.html",
+      "destination": "https://smart-mine-v2-balanced.onrender.com/admin.html"
+    },
+    {
+      "source": "/node_modules/three/:path*",
+      "destination": "https://cdn.jsdelivr.net/npm/three@0.160.0/:path*"
+    },
+    {
+      "source": "/node_modules/echarts/:path*",
+      "destination": "https://cdn.jsdelivr.net/npm/echarts@5.5.0/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://smart-mine-v2-balanced.onrender.com/api/:path*"
     }
