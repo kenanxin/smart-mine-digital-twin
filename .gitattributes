@@ -2,3 +2,9 @@ assets/models/** filter=lfs diff=lfs merge=lfs -text
 assets/hdri/** filter=lfs diff=lfs merge=lfs -text
 assets/textures/** filter=lfs diff=lfs merge=lfs -text
 competition_submission/*.docx filter=lfs diff=lfs merge=lfs -text
+
+# Vercel must receive these runtime assets as real binaries, not LFS pointers.
+assets/hdri/quarry_02_4k.hdr -filter -diff -merge -text
+assets/textures/** -filter -diff -merge -text
+assets/models/quarry-conveyor-system-kit/scene.optimized.glb -filter -diff -merge -text
+assets/models/weathered-cctv-camera/scene.optimized.glb -filter -diff -merge -text
