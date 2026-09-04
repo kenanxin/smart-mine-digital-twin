@@ -202,14 +202,19 @@ async function loadIntegratedMine(container) {
       status.querySelector('small').textContent = `${name} ${percent}%`;
       status.style.setProperty('--mine-load', `${percent}%`);
     });
-    const environment = await new RGBELoader().loadAsync('./assets/hdri/quarry_02_4k.hdr');
-    environment.mapping = THREE.EquirectangularReflectionMapping;
-    mineEnvironment = environment;
-    scene.environment = environment;
+    mineEnvironment = await loadMineEnvironment();
+    if (mineEnvironment) {
+      scene.environment = mineEnvironment;
+      scene.background = mineEnvironment;
+      scene.backgroundIntensity = 0.48;
+      scene.backgroundBlurriness = 0;
+    } else {
+      // Vercel may receive a Git LFS pointer instead of the HDR binary. The
+      // environment is visual polish, so keep the procedural mine usable.
+      scene.environment = null;
+      scene.background = new THREE.Color(0x718087);
+    }
     scene.environmentIntensity = 0.72;
-    scene.background = environment;
-    scene.backgroundIntensity = 0.48;
-    scene.backgroundBlurriness = 0;
 
     const requestedVariant = new URLSearchParams(window.location.search).get('scene');
     const isMineV2 = requestedVariant === 'v2';
@@ -246,6 +251,17 @@ async function loadIntegratedMine(container) {
     status.classList.add('error');
     status.querySelector('b').textContent = '井下场景加载失败';
     status.querySelector('small').textContent = error.message || String(error);
+  }
+}
+
+async function loadMineEnvironment() {
+  try {
+    const environment = await new RGBELoader().loadAsync('./assets/hdri/quarry_02_4k.hdr');
+    environment.mapping = THREE.EquirectangularReflectionMapping;
+    return environment;
+  } catch (error) {
+    console.warn('HDR 环境贴图不可用，已切换到基础光照', error);
+    return null;
   }
 }
 
@@ -877,7 +893,9 @@ function applyCameraPreset(mode, immediate = false) {
   controls.minPolarAngle = limits?.minPolar ?? 0;
   controls.maxPolarAngle = limits?.maxPolar ?? Math.PI;
   controls.autoRotate = false;
-  scene.background = mode === 'underground' ? new THREE.Color(0x151310) : mineEnvironment;
+  scene.background = mode === 'underground'
+    ? new THREE.Color(0x151310)
+    : (mineEnvironment || new THREE.Color(0x718087));
   scene.backgroundIntensity = mode === 'underground' ? 1 : 0.48;
   scene.environmentIntensity = mode === 'underground' ? 0.26 : 0.72;
   groundGroup.visible = true;
