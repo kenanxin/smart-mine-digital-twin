@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;letter-spacing:0}</style>
+<rect width="1600" height="1000" fill="#edf1f2"/>
+<rect width="1600" height="116" fill="#15242a"/>
+<text x="48.0" y="62.0" font-size="34" fill="#ffffff" font-weight="700" text-anchor="start">项目巷道结构 · 1206 工作面布点</text>
+<text x="49.0" y="91.0" font-size="15" fill="#b9c7cb" font-weight="400" text-anchor="start">LIVE TOPOLOGY · FOCUSED ROADWAY MONITORING PLAN</text>
+<text x="1548.0" y="61.0" font-size="28" fill="#e7ae39" font-weight="700" text-anchor="end">俯视版</text>
+<rect x="40" y="148" width="890" height="752" rx="6" fill="#fbfcfc" stroke="#c6d1d5" stroke-width="2"/>
+<rect x="958" y="148" width="602" height="752" rx="6" fill="#fbfcfc" stroke="#c6d1d5" stroke-width="2"/>
+<text x="68.0" y="194.0" font-size="23" fill="#26373d" font-weight="700" text-anchor="start">01  项目实际巷道拓扑</text>
+<text x="986.0" y="194.0" font-size="23" fill="#26373d" font-weight="700" text-anchor="start">02  实景巷道 0-50 m 展开</text>
+<g data-roadway-edge="main-incline-h1"><polyline points="874.0,621.3 763.7,601.8 673.5,579.6" fill="none" stroke="#64767c" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="874.0,621.3 763.7,601.8 673.5,579.6" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="main-incline-h2"><polyline points="673.5,579.6 603.3,546.2 533.1,510.1" fill="none" stroke="#64767c" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="673.5,579.6 603.3,546.2 533.1,510.1" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="main-incline-h3"><polyline points="533.1,510.1 462.9,474.0 392.7,440.6" fill="none" stroke="#64767c" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="533.1,510.1 462.9,474.0 392.7,440.6" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="main-level-h1"><polyline points="673.5,579.6 763.7,649.1 853.9,718.5" fill="none" stroke="#64767c" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="673.5,579.6 763.7,649.1 853.9,718.5" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="pump-descent"><polyline points="853.9,718.5 793.8,718.5 733.6,718.5" fill="none" stroke="#64767c" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="853.9,718.5 793.8,718.5 733.6,718.5" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="main-level-h2"><polyline points="533.1,510.1 452.9,621.3 372.6,718.5" fill="none" stroke="#64767c" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="533.1,510.1 452.9,621.3 372.6,718.5" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="main-level-h3"><polyline points="392.7,440.6 362.6,537.9 292.4,621.3" fill="none" stroke="#328a5b" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="392.7,440.6 362.6,537.9 292.4,621.3" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="return-airway"><polyline points="673.5,579.6 523.1,788.0 372.6,718.5" fill="none" stroke="#64767c" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="673.5,579.6 523.1,788.0 372.6,718.5" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="intake-gate-road"><polyline points="292.4,621.3 212.2,579.6 132.0,440.6" fill="none" stroke="#328a5b" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="292.4,621.3 212.2,579.6 132.0,440.6" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="return-gate-road"><polyline points="292.4,260.0 212.2,301.7 132.0,440.6" fill="none" stroke="#328a5b" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="292.4,260.0 212.2,301.7 132.0,440.6" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="lower-gate-crosscut"><polyline points="392.7,440.6 342.6,343.4 292.4,260.0" fill="none" stroke="#328a5b" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="392.7,440.6 342.6,343.4 292.4,260.0" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="chamber-crosscut"><polyline points="733.6,718.5 372.6,718.5" fill="none" stroke="#64767c" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="733.6,718.5 372.6,718.5" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-edge="face-crosscut"><polyline points="292.4,621.3 292.4,260.0" fill="none" stroke="#328a5b" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><polyline points="292.4,621.3 292.4,260.0" fill="none" stroke="#f7f9f9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g data-roadway-node="portal"><circle cx="874.0" cy="621.3" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="864.0" y="579.3" font-size="16" fill="#26373d" font-weight="700" text-anchor="end">井口</text>
+<text x="864.0" y="600.3" font-size="12" fill="#667980" font-weight="400" text-anchor="end">标高 +18 m</text>
+<g data-roadway-node="h1-junction"><circle cx="673.5" cy="579.6" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="687.5" y="595.6" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">H1 交汇点</text>
+<text x="687.5" y="616.6" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -45 m</text>
+<g data-roadway-node="h1-level-end"><circle cx="853.9" cy="718.5" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="865.9" y="728.5" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">H1 水平端</text>
+<text x="865.9" y="749.5" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -45 m</text>
+<g data-roadway-node="h2-junction"><circle cx="533.1" cy="510.1" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="547.1" y="460.1" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">H2 交汇点</text>
+<text x="547.1" y="481.1" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -95 m</text>
+<g data-roadway-node="h3-junction"><circle cx="392.7" cy="440.6" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="404.7" y="398.6" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">H3 交汇点</text>
+<text x="404.7" y="419.6" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -155 m</text>
+<g data-roadway-node="pump-chamber"><circle cx="733.6" cy="718.5" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="743.6" y="726.5" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">泵房</text>
+<text x="743.6" y="747.5" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -95 m</text>
+<g data-roadway-node="substation-chamber"><circle cx="372.6" cy="718.5" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="384.6" y="728.5" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">变电所</text>
+<text x="384.6" y="749.5" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -95 m</text>
+<g data-roadway-node="intake-gate-end"><circle cx="292.4" cy="621.3" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="304.4" y="637.3" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">进风顺槽端</text>
+<text x="304.4" y="658.3" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -155 m</text>
+<g data-roadway-node="return-gate-end"><circle cx="292.4" cy="260.0" r="8" fill="#15242a" stroke="#ffffff" stroke-width="2"/></g>
+<text x="304.4" y="276.0" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">回风顺槽端</text>
+<text x="304.4" y="297.0" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -155 m</text>
+<g data-roadway-node="working-face-1206"><circle cx="132.0" cy="440.6" r="8" fill="#c9473f" stroke="#ffffff" stroke-width="2"/></g>
+<text x="148.0" y="398.6" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">1206 工作面</text>
+<text x="148.0" y="419.6" font-size="12" fill="#667980" font-weight="400" text-anchor="start">标高 -155 m</text>
+<text x="68.0" y="866.0" font-size="15" fill="#328a5b" font-weight="400" text-anchor="start">绿色线路为通往 1206 工作面的生产区段</text>
+<rect x="988" y="250" width="542" height="504" rx="24" fill="#e1e6e7" stroke="#64767c" stroke-width="8"/>
+<rect x="1014" y="286" width="496" height="438" rx="16" fill="#f8faf9" stroke="#aebbc0" stroke-width="2"/>
+<rect x="1014" y="286" width="62" height="438" fill="#222c30"/>
+<text x="1045.0" y="318.0" font-size="18" fill="#ffffff" font-weight="700" text-anchor="middle">1206</text>
+<text x="1045.0" y="346.0" font-size="15" fill="#ffffff" font-weight="700" text-anchor="middle">工作面</text>
+<rect x="1200.6" y="286" width="43.8" height="438" fill="#f3dedd"/>
+<text x="1222.5" y="706.0" font-size="12" fill="#c9473f" font-weight="700" text-anchor="middle">14-19 m</text>
+<rect x="1048.0" y="500" width="60" height="20" rx="4" fill="#328a5b"/>
+<text x="1078.0" y="493.0" font-size="11" fill="#328a5b" font-weight="700" text-anchor="middle">采煤机</text>
+<rect x="1086.5" y="538" width="60" height="20" rx="4" fill="#328a5b"/>
+<text x="1116.5" y="531.0" font-size="11" fill="#328a5b" font-weight="700" text-anchor="middle">刮板输送机</text>
+<rect x="1069.0" y="576" width="60" height="20" rx="4" fill="#328a5b"/>
+<text x="1099.0" y="569.0" font-size="11" fill="#328a5b" font-weight="700" text-anchor="middle">液压支架组</text>
+<rect x="1100.6" y="614" width="60" height="20" rx="4" fill="#328a5b"/>
+<text x="1130.6" y="607.0" font-size="11" fill="#328a5b" font-weight="700" text-anchor="middle">转载机</text>
+<rect x="1153.1" y="652" width="60" height="20" rx="4" fill="#328a5b"/>
+<text x="1183.1" y="645.0" font-size="11" fill="#328a5b" font-weight="700" text-anchor="middle">破碎机</text>
+<rect x="1293.3" y="680" width="60" height="20" rx="4" fill="#328a5b"/>
+<text x="1323.3" y="673.0" font-size="11" fill="#328a5b" font-weight="700" text-anchor="middle">带式输送机</text>
+<g data-local-monitor="roof-separation-01"><circle cx="1087.0" cy="368.0" r="15" fill="#e29a16" stroke="#ffffff" stroke-width="3"/>
+<text x="1087.0" y="373.0" font-size="16" fill="#ffffff" font-weight="700" text-anchor="middle">1</text>
+</g>
+<g data-local-monitor="roof-separation-02"><circle cx="1139.6" cy="368.0" r="15" fill="#e29a16" stroke="#ffffff" stroke-width="3"/>
+<text x="1139.6" y="373.0" font-size="16" fill="#ffffff" font-weight="700" text-anchor="middle">2</text>
+</g>
+<g data-local-monitor="roof-separation-03"><circle cx="1192.2" cy="368.0" r="15" fill="#e29a16" stroke="#ffffff" stroke-width="3"/>
+<text x="1192.2" y="373.0" font-size="16" fill="#ffffff" font-weight="700" text-anchor="middle">3</text>
+</g>
+<g data-local-monitor="convergence-01"><circle cx="1139.6" cy="562.0" r="15" fill="#e29a16" stroke="#ffffff" stroke-width="3"/>
+<text x="1139.6" y="567.0" font-size="16" fill="#ffffff" font-weight="700" text-anchor="middle">4</text>
+</g>
+<g data-local-monitor="anchor-load-01"><circle cx="1157.1" cy="405.0" r="15" fill="#e29a16" stroke="#ffffff" stroke-width="3"/>
+<text x="1157.1" y="410.0" font-size="16" fill="#ffffff" font-weight="700" text-anchor="middle">5</text>
+</g>
+<g data-local-monitor="support-pressure-03"><circle cx="1087.0" cy="600.0" r="15" fill="#e29a16" stroke="#ffffff" stroke-width="3"/>
+<text x="1087.0" y="605.0" font-size="16" fill="#ffffff" font-weight="700" text-anchor="middle">6</text>
+</g>
+<g data-local-monitor="microseismic-01"><circle cx="1209.7" cy="640.0" r="15" fill="#e29a16" stroke="#ffffff" stroke-width="3"/>
+<text x="1209.7" y="645.0" font-size="16" fill="#ffffff" font-weight="700" text-anchor="middle">7</text>
+</g>
+<g data-local-monitor="cctv-01"><circle cx="1069.5" cy="460.0" r="15" fill="#258fb4" stroke="#ffffff" stroke-width="3"/>
+<text x="1069.5" y="465.0" font-size="16" fill="#ffffff" font-weight="700" text-anchor="middle">8</text>
+</g>
+<text x="1016.0" y="804.0" font-size="16" fill="#26373d" font-weight="700" text-anchor="start">1-8 号点位与实景标注版完全一致</text>
+<text x="1016.0" y="837.0" font-size="13" fill="#667980" font-weight="400" text-anchor="start">横向按 meter 字段；纵向区分顶板、两帮、支架与 CCTV。</text>
+<text x="48.0" y="957.0" font-size="16" fill="#667980" font-weight="400" text-anchor="start">依据项目 Three.js 场景生成，非施工图</text>
+<text x="1552.0" y="957.0" font-size="14" fill="#667980" font-weight="700" text-anchor="end">SMART MINE DIGITAL TWIN</text>
+</svg>

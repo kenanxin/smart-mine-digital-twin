@@ -6,6 +6,7 @@ import {
   FOCUSED_LONGWALL_EQUIPMENT,
   FOCUSED_LONGWALL_MONITORS,
 } from '../js/scene/mine-v2/focused-longwall.js';
+import { FOCUSED_LONGWALL_LAYOUT } from '../js/scene/mine-v2/config.mjs';
 import { ROADWAY_EDGES, ROADWAY_NODES } from '../js/scene/mine-v2/topology.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,6 +36,7 @@ const payload = {
   edges: ROADWAY_EDGES,
   monitors: FOCUSED_LONGWALL_MONITORS,
   equipment: FOCUSED_LONGWALL_EQUIPMENT,
+  camera: FOCUSED_LONGWALL_LAYOUT.defaultCamera,
 };
 
 fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
