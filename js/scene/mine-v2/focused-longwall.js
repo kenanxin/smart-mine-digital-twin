@@ -955,23 +955,33 @@ function createMonitorObject(root, materials, runtime, anchor) {
   return object;
 }
 
+function freezeAnchor(anchor) {
+  return Object.freeze({ ...anchor, position: Object.freeze([...anchor.position]) });
+}
+
+export const FOCUSED_LONGWALL_MONITORS = Object.freeze([
+  { id: 'roof-separation-01', role: 'roofSeparation01', category: 'roof-sensor', type: 'roof-separation', name: '顶板离层仪 01', meter: 4, install: '运输顺槽 4m 顶板中线', value: '离层量 18 mm', status: 'safe', position: [0, 6.45, 4], unit: 'mm', warn: 25, danger: 32 },
+  { id: 'roof-separation-02', role: 'roofSeparation02', category: 'roof-sensor', type: 'roof-separation', name: '顶板离层仪 02', meter: 10, install: '运输顺槽 10m 顶板中线', value: '离层量 25 mm', status: 'warning', position: [0, 6.45, 10], unit: 'mm', warn: 25, danger: 32 },
+  { id: 'roof-separation-03', role: 'roofSeparation03', category: 'roof-sensor', type: 'roof-separation', name: '顶板离层仪 03', meter: 16, install: '运输顺槽 16m 顶板中线', value: '离层量 38 mm', status: 'danger', position: [0, 6.45, 16], unit: 'mm', warn: 25, danger: 32 },
+  { id: 'convergence-01', role: 'convergence01', category: 'roof-sensor', type: 'convergence', name: '巷道收敛监测 01', meter: 10, install: '运输顺槽 10m 两帮-顶板测线', value: '收敛量 21 mm', status: 'warning', position: [-5.05, 2.05, 10], unit: 'mm', warn: 18, danger: 25 },
+  { id: 'anchor-load-01', role: 'anchorLoad01', category: 'roof-sensor', type: 'anchor-load', name: '锚索受力监测 01', meter: 12, install: '运输顺槽 12m 顶板锚索', value: '锚索载荷 236 kN', status: 'warning', position: [2.25, 6.05, 12], unit: 'kN', warn: 220, danger: 260 },
+  { id: 'support-pressure-03', role: 'supportPressure03', category: 'equipment-status', type: 'support-load', name: '支架压力 03', meter: 4, install: '工作面出口第 3 架液压支架', value: '工作阻力 9680 kN', status: 'warning', position: [-1.1, 2.3, -4.8], unit: 'kN', warn: 9500, danger: 10500 },
+  { id: 'microseismic-01', role: 'microseismic01', category: 'roof-sensor', type: 'microseismic', name: '微震监测 01', meter: 18, install: '运输顺槽 18m 左帮', value: '微震能量 860 J', status: 'warning', position: [-5.02, 2.8, 18], unit: 'J', warn: 800, danger: 1200 },
+  { id: 'cctv-01', role: 'cctv01', category: 'camera', type: 'camera', name: '出口 CCTV 01', meter: 2, install: '工作面出口顶板支架', value: '视频在线', status: 'safe', position: [4.2, 5.85, 2], unit: 'stream', warn: null, danger: null },
+].map(freezeAnchor));
+
+export const FOCUSED_LONGWALL_EQUIPMENT = Object.freeze([
+  { id: 'machine-shearer', category: 'equipment-status', type: 'equipment', name: '采煤机', value: '运行', position: [0.7, 2.8, -2.0] },
+  { id: 'machine-afc', category: 'equipment-status', type: 'equipment', name: '刮板输送机', value: '运行', position: [0.8, 1.5, 4.4] },
+  { id: 'machine-supports', category: 'equipment-status', type: 'equipment', name: '液压支架组', value: '12架', position: [-2.2, 4.0, 2.4] },
+  { id: 'machine-stage-loader', category: 'equipment-status', type: 'equipment', name: '转载机', value: '0-12m', position: [-1.1, 1.8, 6] },
+  { id: 'machine-crusher', category: 'equipment-status', type: 'equipment', name: '破碎机', value: '8-16m', position: [1.55, 2.9, 12] },
+  { id: 'machine-belt', category: 'equipment-status', type: 'equipment', name: '带式输送机', value: '12-50m', position: [1.55, 1.8, 28] },
+].map(freezeAnchor));
+
 function createMonitoring(root, materials, runtime) {
-  const monitors = [
-    { id: 'roof-separation-01', role: 'roofSeparation01', category: 'roof-sensor', type: 'roof-separation', name: '顶板离层仪 01', meter: 4, install: '运输顺槽 4m 顶板中线', value: '离层量 18 mm', status: 'safe', position: [0, 6.45, 4], unit: 'mm', warn: 25, danger: 32 },
-    { id: 'roof-separation-02', role: 'roofSeparation02', category: 'roof-sensor', type: 'roof-separation', name: '顶板离层仪 02', meter: 10, install: '运输顺槽 10m 顶板中线', value: '离层量 25 mm', status: 'warning', position: [0, 6.45, 10], unit: 'mm', warn: 25, danger: 32 },
-    { id: 'roof-separation-03', role: 'roofSeparation03', category: 'roof-sensor', type: 'roof-separation', name: '顶板离层仪 03', meter: 16, install: '运输顺槽 16m 顶板中线', value: '离层量 38 mm', status: 'danger', position: [0, 6.45, 16], unit: 'mm', warn: 25, danger: 32 },
-    { id: 'convergence-01', role: 'convergence01', category: 'roof-sensor', type: 'convergence', name: '巷道收敛监测 01', meter: 10, install: '运输顺槽 10m 两帮-顶板测线', value: '收敛量 21 mm', status: 'warning', position: [-5.05, 2.05, 10], unit: 'mm', warn: 18, danger: 25 },
-    { id: 'anchor-load-01', role: 'anchorLoad01', category: 'roof-sensor', type: 'anchor-load', name: '锚索受力监测 01', meter: 12, install: '运输顺槽 12m 顶板锚索', value: '锚索载荷 236 kN', status: 'warning', position: [2.25, 6.05, 12], unit: 'kN', warn: 220, danger: 260 },
-    { id: 'support-pressure-03', role: 'supportPressure03', category: 'equipment-status', type: 'support-load', name: '支架压力 03', meter: 4, install: '工作面出口第 3 架液压支架', value: '工作阻力 9680 kN', status: 'warning', position: [-1.1, 2.3, -4.8], unit: 'kN', warn: 9500, danger: 10500 },
-    { id: 'microseismic-01', role: 'microseismic01', category: 'roof-sensor', type: 'microseismic', name: '微震监测 01', meter: 18, install: '运输顺槽 18m 左帮', value: '微震能量 860 J', status: 'warning', position: [-5.02, 2.8, 18], unit: 'J', warn: 800, danger: 1200 },
-    { id: 'cctv-01', role: 'cctv01', category: 'camera', type: 'camera', name: '出口 CCTV 01', meter: 2, install: '工作面出口顶板支架', value: '视频在线', status: 'safe', position: [4.2, 5.85, 2], unit: 'stream', warn: null, danger: null },
-    { id: 'machine-shearer', category: 'equipment-status', type: 'equipment', name: '采煤机', value: '运行', position: [0.7, 2.8, -2.0] },
-    { id: 'machine-afc', category: 'equipment-status', type: 'equipment', name: '刮板输送机', value: '运行', position: [0.8, 1.5, 4.4] },
-    { id: 'machine-supports', category: 'equipment-status', type: 'equipment', name: '液压支架组', value: '12架', position: [-2.2, 4.0, 2.4] },
-    { id: 'machine-stage-loader', category: 'equipment-status', type: 'equipment', name: '转载机', value: '0-12m', position: [-1.1, 1.8, 6] },
-    { id: 'machine-crusher', category: 'equipment-status', type: 'equipment', name: '破碎机', value: '8-16m', position: [1.55, 2.9, 12] },
-    { id: 'machine-belt', category: 'equipment-status', type: 'equipment', name: '带式输送机', value: '12-50m', position: [1.55, 1.8, 28] },
-  ];
+  const monitors = [...FOCUSED_LONGWALL_MONITORS, ...FOCUSED_LONGWALL_EQUIPMENT]
+    .map(anchor => ({ ...anchor, position: [...anchor.position] }));
 
   const relocatedEquipmentAnchors = new Map([
     ['machine-supports', { value: '12架', position: [-2.15, 3.05, -1.4] }],
