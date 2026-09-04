@@ -1,15 +1,15 @@
 # 煤矿顶板灾变智能预警与可视化决策系统
 
-本项目面向“基于数字孪生的煤矿顶板灾变智能预警与可视化决策系统”比赛题目，提供本地运行的三维数字孪生展示平台、三端协同管控页面和 RoofRisk API v1 多源风险接口原型。
+本项目面向“基于数字孪生的煤矿顶板灾变智能预警与可视化决策系统”比赛题目，提供已上线的三维数字孪生平台、多角色协同管控页面和 RoofRisk API v1 多源风险接口。
 
-当前版本已完整接入老师提供的 20,000 行真实监测 CSV 和现有 XGBoost 模型。构建期 Python 工具执行源文件校验、按设备时间切段、卡尔曼平滑、标准化、数据质量编码与 XGBoost 推理，生成确定性 JSON；运行期仍由单一 Node 服务向企业端、监管端和智库端提供 RoofRisk API v1。
+当前版本已完整接入老师提供的 20,000 行真实监测 CSV 和现有 XGBoost 模型。构建期 Python 工具执行源文件校验、按设备时间切段、卡尔曼平滑、标准化、数据质量编码与 XGBoost 推理，生成确定性 JSON；运行期由 Render 上的 Node 服务通过 RoofRisk API v1 向各角色提供一致结果，Supabase 持久化账户、角色、权限和审计数据。
 
 ## 主要功能
 
 - 三维数字孪生：基于 Three.js 展示井下巷道、工作面、设备、风险场和灾变过程。
 - 顶板风险场：支持应力场、位移场和综合风险场切换。
 - 六阶段灾变演示：覆盖正常监测、应力集中、离层扩展、支护异常、垮落预警、应急处置。
-- 三端协同闭环：企业端负责现场监测与处置，监管端负责区域态势和闭环督办，智库端负责模型解释和复盘。
+- 多角色协同闭环：企业端负责现场监测与处置，监管端负责区域态势和闭环督办，智库端负责模型解释和复盘，只读端用于受限查看，超级管理员负责账户与权限管理。
 - 统一接口：RoofRisk API v1 统一真实输入、四级概率、综合风险、特征证据、预警事件和闭环状态。
 - 模型审计：智库端并列展示真实标签、XGBoost 预测、置信度、模型准确率、记录号与数据哈希。
 
@@ -54,33 +54,20 @@ http://localhost:8092/
 http://localhost:8092/login
 ```
 
-## 三端账号与权限
+## 角色与权限
 
-登录页不提供角色选择。账号验证成功后，系统按账号角色自动进入企业端、监管端或智库端，并覆盖 URL 中冲突的 `portal` 参数。
+登录页不提供角色选择。账号经 Supabase 验证后，后端根据 RBAC 角色自动进入对应界面，并覆盖 URL 中冲突的 `portal` 参数。演示账户由超级管理员创建，密码通过现场私密账户卡提供，不写入仓库。
 
-| 账号 | 初始密码 | 角色 | 显示名称 |
-|---|---|---|---|
-| `enterprise_operator` | `Mine@2026` | 企业端 | 企业端操作员 |
-| `regulator_officer` | `Safe@2026` | 监管端 | 监管端监管员 |
-| `expert_analyst` | `Model@2026` | 智库端 | 智库端专家 |
+| 能力 | 企业端 | 监管端 | 智库端 | 只读端 | 超级管理员 |
+|---|---:|---:|---:|---:|---:|
+| 查看风险与事件 | 允许 | 允许 | 允许 | 允许 | 管理中心 |
+| 推进处置 | 允许 | 允许 | 禁止 | 禁止 | 禁止 |
+| 归档事件 | 禁止 | 允许 | 禁止 | 禁止 | 禁止 |
+| 重置闭环 | 允许 | 禁止 | 禁止 | 禁止 | 禁止 |
+| 创建账户与分配角色 | 禁止 | 禁止 | 禁止 | 禁止 | 允许 |
+| 查看审计日志 | 禁止 | 禁止 | 禁止 | 禁止 | 允许 |
 
-| 闭环操作 | 企业端 | 监管端 | 智库端 |
-|---|---:|---:|---:|
-| 推进 `advance` | 允许 | 允许 | 禁止 |
-| 归档 `archive` | 禁止 | 允许 | 禁止 |
-| 重置 `reset` | 允许 | 禁止 | 禁止 |
-
-所有角色均可读取 RoofRisk 数据和选择四级代表事件。后端会再次校验闭环操作权限，不能通过修改前端或直接调用 API 越权。
-
-会话使用 256 位随机令牌并保存在进程内存中，绝对有效期为 8 小时；服务重启会使当前会话失效。Cookie 名为 `roofrisk_session`，属性为 `HttpOnly`、`SameSite=Strict`、`Path=/` 和 `Max-Age=28800`，HTTPS 环境额外启用 `Secure`。同一用户名与客户端在 15 分钟内连续失败 5 次后返回 `429`。
-
-初始密码只以 scrypt 哈希形式保存在代码中。生产部署可用以下变量覆盖，格式必须是 `scrypt$16384$8$1$<salt-hex>$<64-byte-derived-key-hex>`：
-
-```text
-ROOFRISK_ENTERPRISE_PASSWORD_HASH
-ROOFRISK_REGULATOR_PASSWORD_HASH
-ROOFRISK_EXPERT_PASSWORD_HASH
-```
+后端会再次校验每项权限，不能通过修改前端或直接调用 API 越权。只读端复用智库端的信息布局，但角色仍为 `viewer`，不继承写权限。生产账号保存在 Supabase；Web 会话由 Render 进程管理，服务重启后需要重新登录。
 
 ## RoofRisk API v1
 
@@ -117,7 +104,7 @@ docs/api/roof-risk-api-v1.md
 -> 构建期卡尔曼预处理 + XGBoost 推理
 -> data/roof-risk-dataset.json
 -> RoofRisk API v1 标准 JSON
--> 三维孪生展示 / 企业端 / 监管端 / 智库端
+-> 三维孪生展示 / 企业端 / 监管端 / 智库端 / 只读端
 ```
 
 ## 比赛提交资料
@@ -149,12 +136,15 @@ competition_submission
 
 项目支持 Vercel + Render + Supabase 联动，不需要自定义域名。Vercel 提供 `*.vercel.app` 地址，Render 提供 `*.onrender.com` 地址。
 
+- 生产登录页：`https://smart-mine-v2-balanced.vercel.app/login`
+- 后端健康检查：`https://smart-mine-v2-balanced.onrender.com/healthz`
+
 - Vercel：托管静态前端，并通过 `vercel.json` 代理 `/api/*`。
 - Render：运行 Node API、权限校验和 RoofRisk 业务服务。
 - Supabase：执行 `supabase/migrations/202609030001_rbac_foundation.sql`，保存用户角色、权限、审计和闭环状态。
 
 部署前复制 `.env.example` 配置 Render 环境变量。`SUPABASE_SERVICE_ROLE_KEY` 只能放在 Render，不能提交到 Git 或暴露给浏览器。Vercel 配置中的 Render 地址部署后需替换为实际服务地址。
 
-Render 健康检查地址为 `/healthz`。当前真实 CSV/XGBoost 构建产物仍由 Render 读取；第一阶段只迁移身份、权限、审计和闭环状态。
+Render 健康检查地址为 `/healthz`。当前真实 CSV/XGBoost 构建产物由 Render 读取；Supabase 负责身份、角色、权限与审计持久化。Render 免费实例可能发生冷启动，首次访问时应先等待健康检查恢复。
 
 启用 `AUTH_PROVIDER=supabase` 后，超级管理员访问 `/admin`。在管理中心可以创建账户、分配企业端/监管端/智库端/只读角色、停用账户并查看审计日志。Supabase SQL 编辑器执行迁移后，需先在 Supabase Auth 中创建一个用户，再在 `profiles` 和 `user_roles` 表将其角色设为 `super_admin`；管理员创建的新账户会自动写入这两张表。`SUPABASE_SERVICE_ROLE_KEY` 仅配置在 Render。

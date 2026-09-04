@@ -76,14 +76,14 @@ def create_system_architecture() -> Path:
     path = FIG_DIR / "系统总体架构图.png"
     img = Image.new("RGB", (1800, 1120), "#f8fafc")
     draw = ImageDraw.Draw(img)
-    draw.text((70, 45), "系统总体架构：感知 - 模型 - 孪生 - 三端协同", fill="#0f172a", font=font(42, True))
+    draw.text((70, 45), "生产架构：真实数据 - 模型 - 服务 - 多角色协同", fill="#0f172a", font=font(42, True))
     layers = [
         ("感知设备层\n应力/离层/下沉/支架阻力/锚索/微震", "#dbeafe"),
-        ("数据接入层\n边缘网关/工业环网/标准 JSON 接口", "#dcfce7"),
-        ("数据治理层\n清洗校验/时空对齐/测点编码/质量标记", "#fef3c7"),
-        ("智能预警模型层\n多源融合/趋势修正/空间联动/解释输出", "#fee2e2"),
-        ("数字孪生可视化层\nThree.js 巷道模型/云图/测点/设备联动", "#ede9fe"),
-        ("三端协同应用层\n企业端/监管端/智库端/闭环处置", "#cffafe"),
+        ("真实数据与治理层\n20,000 行 CSV/校验/卡尔曼平滑/标准化", "#dcfce7"),
+        ("XGBoost 模型层\n四级概率/风险分值/特征证据/确定性 JSON", "#fef3c7"),
+        ("Render 服务层\nNode API/会话/权限校验/RoofRisk API v1", "#fee2e2"),
+        ("Vercel 可视化层\nThree.js/ECharts/三维风险场/静态资源", "#ede9fe"),
+        ("Supabase 与多角色应用\nAuth/RBAC/审计/企业/监管/智库/只读/管理员", "#cffafe"),
     ]
     x = 120
     y = 145
@@ -102,16 +102,16 @@ def create_database_er() -> Path:
     path = FIG_DIR / "数据库ER关系图.png"
     img = Image.new("RGB", (1800, 1050), "#f8fafc")
     draw = ImageDraw.Draw(img)
-    draw.text((70, 45), "数据库 ER 关系图：监测数据与预警闭环", fill="#0f172a", font=font(42, True))
+    draw.text((70, 45), "Supabase RBAC 与审计数据关系", fill="#0f172a", font=font(42, True))
     boxes = {
-        "mine_info\n矿井信息": (90, 170, 430, 310),
-        "working_face\n工作面": (590, 170, 930, 310),
-        "sensor_info\n传感器": (1090, 170, 1430, 310),
-        "monitor_data\n监测数据": (1090, 470, 1430, 610),
-        "warning_event\n预警事件": (590, 470, 930, 610),
-        "disposal_record\n处置记录": (90, 470, 430, 610),
-        "model_result\n模型输出": (590, 760, 930, 900),
-        "user_role\n三端角色": (90, 760, 430, 900),
+        "auth.users\n认证用户": (90, 170, 430, 310),
+        "profiles\n用户资料/状态": (590, 170, 930, 310),
+        "user_roles\n用户角色关联": (1090, 170, 1430, 310),
+        "roles\n角色": (1090, 470, 1430, 610),
+        "role_permissions\n角色权限关联": (590, 470, 930, 610),
+        "permissions\n权限": (90, 470, 430, 610),
+        "audit_logs\n审计日志": (590, 760, 930, 900),
+        "Render API\n服务端校验": (90, 760, 430, 900),
     }
     colors = ["#dbeafe", "#dcfce7", "#fef3c7", "#fee2e2", "#ede9fe", "#cffafe", "#fae8ff", "#e2e8f0"]
     def center(label: str) -> tuple[int, int]:
@@ -129,13 +129,13 @@ def create_database_er() -> Path:
             end = (bc[0], by1 if bc[1] > ac[1] else by2)
         return start, end
     relations = [
-        ("mine_info\n矿井信息", "working_face\n工作面"),
-        ("working_face\n工作面", "sensor_info\n传感器"),
-        ("sensor_info\n传感器", "monitor_data\n监测数据"),
-        ("monitor_data\n监测数据", "warning_event\n预警事件"),
-        ("warning_event\n预警事件", "disposal_record\n处置记录"),
-        ("warning_event\n预警事件", "model_result\n模型输出"),
-        ("user_role\n三端角色", "disposal_record\n处置记录"),
+        ("auth.users\n认证用户", "profiles\n用户资料/状态"),
+        ("profiles\n用户资料/状态", "user_roles\n用户角色关联"),
+        ("user_roles\n用户角色关联", "roles\n角色"),
+        ("roles\n角色", "role_permissions\n角色权限关联"),
+        ("role_permissions\n角色权限关联", "permissions\n权限"),
+        ("profiles\n用户资料/状态", "audit_logs\n审计日志"),
+        ("Render API\n服务端校验", "permissions\n权限"),
     ]
     for a, b in relations:
         start, end = edge_points(a, b)
@@ -272,6 +272,8 @@ def add_table(doc: Document, headers: list[str], rows: list[list[str]]) -> None:
     table = doc.add_table(rows=1, cols=len(headers))
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     table.style = "Table Grid"
+    header_props = table.rows[0]._tr.get_or_add_trPr()
+    header_props.append(OxmlElement("w:tblHeader"))
     for cell, header in zip(table.rows[0].cells, headers):
         set_cell_shading(cell, "#E8EEF5")
         set_cell_text(cell, header, True)
@@ -279,6 +281,9 @@ def add_table(doc: Document, headers: list[str], rows: list[list[str]]) -> None:
         cells = table.add_row().cells
         for cell, value in zip(cells, row):
             set_cell_text(cell, value)
+    for table_row in table.rows:
+        row_props = table_row._tr.get_or_add_trPr()
+        row_props.append(OxmlElement("w:cantSplit"))
 
 
 def add_picture(doc: Document, path: Path, caption: str, width: float = 6.3) -> None:
@@ -288,7 +293,9 @@ def add_picture(doc: Document, path: Path, caption: str, width: float = 6.3) -> 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run()
-    run.add_picture(str(path), width=Inches(width))
+    picture = run.add_picture(str(path), width=Inches(width))
+    picture._inline.docPr.set("descr", caption)
+    picture._inline.docPr.set("title", caption)
     cap = doc.add_paragraph()
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     cap.add_run(caption).italic = True
@@ -300,9 +307,9 @@ def report_one(figs: dict[str, Path]) -> Path:
     add_title(doc, "基于数字孪生的煤矿顶板灾变智能预警与可视化决策系统", "总体技术方案报告")
     doc.add_heading("摘要", level=1)
     add_para(doc, "本方案面向煤矿顶板灾变智能预警场景，针对监测数据碎片化、多源融合困难、预警模型适应性不足、可视化程度低和管控响应滞后等问题，提出“多源感知、标准接入、融合预警、数字孪生、三端协同、闭环处置”的总体技术路线。系统以顶板应力、离层、下沉、支架阻力、锚杆锚索受力和微震能量等指标为核心输入，通过模型服务输出风险分值、风险等级、贡献因子和判别依据，并在三维孪生工作面中进行风险云图和灾变过程表达。")
-    add_para(doc, "当前平台已完成企业端、监管端、智库端三端可视化原型，具备顶板应力场、位移场、综合风险场切换，以及从正常监测到应急处置的六阶段演示能力。后续可将组内算法成员的正式模型、真实传感器接口和数据库服务接入现有展示层，形成可扩展的顶板灾害预警与决策系统。")
+    add_para(doc, "当前平台已接入老师提供的 20,000 行真实监测 CSV 和 XGBoost 模型，具备顶板应力场、位移场、综合风险场切换以及六阶段灾变演示能力。生产系统采用 Vercel、Render 与 Supabase 联动部署，支持企业、监管、智库、只读和超级管理员五类角色。")
     doc.add_heading("关键词", level=1)
-    add_para(doc, "数字孪生；煤矿顶板；多源融合；智能预警；三端协同；可视化决策")
+    add_para(doc, "数字孪生；煤矿顶板；XGBoost；多源融合；RBAC；可视化决策")
     doc.add_heading("1 项目背景与建设目标", level=1)
     add_para(doc, "顶板事故是煤矿安全生产中的重要风险来源。随着采掘深度增加、巷道围岩条件复杂化和工作面推进节奏加快，单一传感器或单一阈值已难以及时、准确地识别灾变前兆。传统管理方式常依赖二维曲线、人工巡检和事后分析，存在空间定位不直观、预警依据不透明、处置闭环不完整等问题。")
     add_bullets(doc, [
@@ -320,17 +327,17 @@ def report_one(figs: dict[str, Path]) -> Path:
         ["数据层", "标准字段、时间戳、测点编码、质量标记", "多源数据标准接口"],
         ["模型层", "综合风险分值、等级、贡献因子、判别依据", "智能预警模型"],
         ["孪生层", "三维巷道、设备、云图、测点联动", "数字孪生可视化"],
-        ["应用层", "企业端、监管端、智库端", "三端协同管控"],
+        ["应用层", "企业端、监管端、智库端、只读端、管理端", "多角色协同管控"],
         ["闭环层", "确认、处置、督办、反馈、复盘", "管控响应闭环"],
     ])
     doc.add_heading("3 系统总体架构", level=1)
-    add_para(doc, "平台由前端展示层、数据服务层、模型服务层、数据标准层和管控业务层组成。前端展示层使用 Three.js 构建井下工作面孪生场景，使用 ECharts 展示趋势曲线和指标态势；数据服务层提供标准化 JSON 数据；模型服务层接收多源指标并输出综合风险结果；管控业务层将风险结果转化为处置建议、监管指令和专家复盘依据。")
+    add_para(doc, "平台采用前后端分离的生产架构。Vercel 托管登录页、业务页面、Three.js 场景和 ECharts 图表，并代理 API 请求；Render 运行 Node 服务、会话、权限校验和 RoofRisk API v1；Supabase Auth 与 PostgreSQL 持久化账户、角色、权限、状态和审计日志。")
     add_table(doc, ["模块", "实现方式", "当前状态"], [
         ["三维可视化", "Three.js", "已实现井下工作面、设备、测点和风险云图"],
         ["指标态势", "ECharts + 指标卡片", "已展示应力、位移、支架阻力、微震等指标"],
         ["数据接口", "RoofRisk API v1 / 标准化 JSON", "已支持多源指标、模型解释和事件闭环字段"],
-        ["模型输出", "模型服务输出接入展示层", "当前以演示算法和模拟数据驱动"],
-        ["三端协同", "URL 参数与门户切换", "企业端、监管端、智库端已实现雏形"],
+        ["模型输出", "卡尔曼预处理 + XGBoost", "20,000 条记录，独立测试准确率 99.325%"],
+        ["身份权限", "Supabase Auth + RBAC", "五类角色，后端校验与审计已上线"],
     ])
     doc.add_heading("4 核心技术创新点", level=1)
     doc.add_heading("4.1 多源融合风险评估", level=2)
@@ -340,18 +347,18 @@ def report_one(figs: dict[str, Path]) -> Path:
     six = SCREEN_ROOT / "roof-six-stage-qa-current"
     for i, name in enumerate(["01-normal-stress.png", "02-pressure-stress.png", "03-separation-displacement.png"], start=2):
         add_picture(doc, six / name, f"图 {i} 顶板灾变阶段截图：{name}", 6.2)
-    doc.add_heading("4.3 三端协同可视化管控", level=2)
-    add_para(doc, "企业端面向现场生产和应急处置，监管端面向集团或安全监管部门的远程督办，智库端面向高校和专家团队的模型解释、参数优化与历史复盘。三端共享同一风险事件和模型输出，避免信息孤岛。")
+    doc.add_heading("4.3 多角色协同与最小权限", level=2)
+    add_para(doc, "企业端面向现场处置，监管端面向远程督办与归档，智库端面向模型解释与复盘，只读端提供无写操作的受限视图，超级管理员负责账户与角色管理。各角色共享同一风险事件和模型输出，写操作同时受到前端可见性和 Render 后端权限校验保护。")
     portal = SCREEN_ROOT / "portal-three-terminal-check-current"
     add_picture(doc, portal / "enterprise.png", "图 5 企业端数字孪生监控界面", 6.2)
     add_picture(doc, portal / "regulator.png", "图 6 监管端区域风险态势界面", 6.2)
     add_picture(doc, portal / "expert.png", "图 7 智库端模型解释界面", 6.2)
     doc.add_heading("5 实施方案", level=1)
     add_numbered(doc, [
-        "数据标准与原型搭建：完成多源字段定义、模拟数据接入和三维工作面基础场景。",
-        "风险模型接入：接入组内算法成员输出的风险分值、等级、贡献因子和判别依据。",
-        "三端平台建设：完善企业端处置闭环、监管端督办闭环和智库端模型复盘。",
-        "验证与交付：完成正式报告、核心算法代码包、运行说明和演示视频。",
+        "数据与模型：完成真实 CSV 校验、卡尔曼平滑、标准化和 XGBoost 推理。",
+        "平台与接口：通过 RoofRisk API v1 统一风险分值、等级、概率和特征证据。",
+        "角色与权限：完成企业、监管、智库、只读和超级管理员的 RBAC。",
+        "生产与交付：完成 Vercel、Render、Supabase 部署及报告、预检和离线兜底。",
     ])
     doc.add_heading("6 监测网络设计", level=1)
     add_para(doc, "监测网络围绕工作面超前支承压力影响区、巷道顶板关键断面、液压支架受载区域和微震活动区域布设。测点编码建议采用“矿井编号-工作面编号-巷道类型-测点类型-序号”的统一格式，便于数据接口、三维点位和数据库记录保持一致。")
@@ -368,12 +375,12 @@ def report_one(figs: dict[str, Path]) -> Path:
     add_para(doc, "综合风险分值建议采用“多源指标归一化得分 + 趋势增长项 + 空间联动项 + 模型修正项”的口径。0-30 为绿色，30-50 为关注，50-70 为黄色，70-85 为橙色，85-100 为红色。正式应用时应结合矿井地质条件、历史数据和算法验证结果校准阈值。")
     doc.add_heading("8 可行性、先进性与应用价值", level=1)
     add_bullets(doc, [
-        "可行性：平台采用成熟 Web 技术和标准 JSON 数据接口，可由模拟数据平滑替换为真实传感器数据。",
-        "先进性：方案从单点阈值报警升级为多源融合、三维孪生、可解释预警和三端协同。",
+        "可行性：平台采用成熟 Web 技术和标准 JSON 数据接口，已接入老师真实数据。",
+        "先进性：方案从单点阈值报警升级为 XGBoost 多源融合、三维孪生、可解释预警和多角色协同。",
         "应用价值：有助于提高灾害早期识别能力，缩短响应时间，降低人工巡检压力和误判风险。",
     ])
-    doc.add_heading("9 后续完善建议", level=1)
-    add_para(doc, "在正式提交前，建议补充算法成员的模型训练或验证指标，包括准确率、召回率、误报率、响应时间和典型案例；同时完成演示视频录制，并将三维平台、接口原型、算法代码和报告统一整理为提交目录。")
+    doc.add_heading("9 交付与扩展边界", level=1)
+    add_para(doc, "当前版本已完成生产部署、真实数据接入、权限数据库和自动化测试。提交前只需按脚本完成视频录制和跨电脑检查。后续若接入实时传感器或在线模型服务，只需保持 RoofRisk API v1 字段合同，无需重写角色页面。")
     path = OUT_DIR / "01-总体技术方案报告.docx"
     doc.save(path)
     return path
@@ -384,17 +391,20 @@ def report_two(figs: dict[str, Path]) -> Path:
     style_doc(doc)
     add_title(doc, "基于数字孪生的煤矿顶板灾变智能预警与可视化决策系统", "平台系统设计方案与智能预警模型研究报告")
     doc.add_heading("摘要", level=1)
-    add_para(doc, "本报告围绕三端可视化管控平台的软件架构、功能模块、数据库设计和智能预警模型展开设计。平台以企业端、监管端、智库端为应用入口，以多源监测数据标准接口为基础，以顶板灾变判别模型为核心，以数字孪生可视化为表达方式，构建面向煤矿顶板灾害的预警、处置和复盘闭环。")
+    add_para(doc, "本报告围绕多角色可视化管控平台的软件架构、Supabase 权限数据库和 XGBoost 智能预警模型展开。平台以企业、监管、智库、只读和超级管理员为角色入口，以老师真实监测数据和 RoofRisk API v1 为基础，以数字孪生为表达方式，构建预警、处置、监管、复盘和审计闭环。")
     doc.add_heading("1 平台建设定位", level=1)
     add_para(doc, "平台定位为煤矿顶板灾变智能预警与可视化决策系统，服务对象包括生产矿井、集团或安监监管部门以及高校科研智库。系统不只展示数据，还要把模型判断、风险区域、处置建议和反馈记录串联为一个可追踪流程。")
-    doc.add_heading("2 三端可视化管控平台软件架构", level=1)
-    add_picture(doc, figs["architecture"], "图 1 三端平台软件架构图")
+    doc.add_heading("2 多角色可视化管控平台软件架构", level=1)
+    add_picture(doc, figs["architecture"], "图 1 生产部署与多角色平台架构图")
     add_table(doc, ["端口", "使用对象", "重点能力"], [
         ["企业端", "生产矿井现场", "实时监控、风险定位、处置建议、确认反馈"],
         ["监管端", "集团/安监部门", "区域总览、风险分级、预警闭环、远程督办"],
         ["智库端", "高校/科研机构", "模型解释、参数权重、历史复盘、算法服务"],
+        ["只读端", "参观/审查人员", "受限查看风险和模型信息，无写操作"],
+        ["超级管理员", "系统负责人", "账户创建、角色分配、状态管理、审计日志"],
     ])
-    doc.add_heading("3 功能模块设计", level=1)
+    module_heading = doc.add_heading("3 功能模块设计", level=1)
+    module_heading.paragraph_format.page_break_before = True
     add_table(doc, ["功能模块", "输入", "输出"], [
         ["多源数据接入", "应力、位移、支架阻力、锚索、微震、地质信息", "统一测点数据"],
         ["数据清洗与时空对齐", "不同频率和格式的数据", "标准时间序列与三维坐标映射"],
@@ -402,20 +412,21 @@ def report_two(figs: dict[str, Path]) -> Path:
         ["数字孪生可视化", "三维模型、测点、模型输出", "应力场、位移场、综合风险场"],
         ["预警处置闭环", "风险事件和处置规则", "确认、督办、反馈、复盘记录"],
     ])
-    doc.add_heading("4 数据库设计", level=1)
-    add_para(doc, "数据库建议采用关系型数据库保存矿井、工作面、传感器、预警事件和处置记录，采用时序表或分区表保存高频监测数据。这样既能支撑监管闭环，也能为智库端模型复盘提供历史样本。")
-    add_picture(doc, figs["database"], "图 2 数据库 ER 关系图")
+    database_heading = doc.add_heading("4 数据库设计", level=1)
+    database_heading.paragraph_format.page_break_before = True
+    add_para(doc, "生产系统已接入 Supabase Auth 与 PostgreSQL。Auth 保存认证主体，profiles 保存显示名称、组织和账号状态，roles、permissions、user_roles 与 role_permissions 构成 RBAC，audit_logs 记录管理员操作。高频监测结果当前由确定性 JSON 提供，后续可迁移至时序表而不改变前端合同。")
+    add_picture(doc, figs["database"], "图 2 Supabase RBAC 与审计关系图")
     add_table(doc, ["数据表", "核心字段", "用途"], [
-        ["mine_info", "mine_id, mine_name, company, location, risk_level", "矿井基础信息"],
-        ["working_face", "face_id, mine_id, face_name, roadway_type", "工作面与巷道信息"],
-        ["sensor_info", "sensor_id, face_id, sensor_type, x, y, z, status", "传感器台账和三维坐标"],
-        ["monitor_data", "data_id, sensor_id, metric_type, metric_value, collect_time", "多源监测原始数据"],
-        ["warning_event", "event_id, face_id, risk_score, risk_level, trigger_metrics", "预警事件和模型解释"],
-        ["disposal_record", "record_id, event_id, action_type, operator, feedback", "处置过程和闭环反馈"],
+        ["profiles", "id, username, display_name, organization, status", "用户资料与启停状态"],
+        ["roles", "id, key, name, description", "五类系统角色"],
+        ["permissions", "id, key, name", "细粒度操作权限"],
+        ["user_roles", "user_id, role_id", "用户与角色关联"],
+        ["role_permissions", "role_id, permission_id", "角色与权限关联"],
+        ["audit_logs", "operator_id, action, target_id, details, created_at", "管理操作审计"],
     ])
     doc.add_heading("5 深地透明感知与智能预警模型研究", level=1)
-    add_para(doc, "透明感知对象包括顶板结构状态、支承压力分布、顶板离层和下沉变形、支护系统受力状态以及岩体破裂活动。模型输入特征包括 roof_stress、separation、subsidence、support_resistance、anchor_load、microseismic_energy、stress_growth_rate、displacement_growth_rate 和 spatial_coupling_index。")
-    add_para(doc, "平台展示层采用统一模型输出接口：risk_score 表示综合风险分值，risk_level 表示风险等级，stage 表示灾变阶段，contribution 表示指标贡献度，explanation 表示判别依据，actions 表示处置建议。算法成员可在此接口下替换具体模型实现。")
+    add_para(doc, "老师数据包含 20,000 行、11 列。七项数值输入为顶板离层速率、锚杆轴力增量、锚索轴力增量、支架阻力、涌水量、微震能量和距水体/岩溶体距离，另包含数据质量类别。构建过程按设备时间切段，执行卡尔曼平滑、标准化和 XGBoost 四分类推理。")
+    add_para(doc, "模型独立测试准确率为 99.325%，全量回放一致率为 99.665%。展示层通过 RoofRisk API v1 获取 risk_score、risk_level、probabilities、contribution、explanation 和 actions；在线模型可在保持字段合同的情况下替换构建期推理结果。")
     add_table(doc, ["风险分值", "风险等级", "系统动作"], [
         ["0-30", "绿色", "正常监测"],
         ["30-50", "关注", "加密监测"],
@@ -457,10 +468,11 @@ def report_two(figs: dict[str, Path]) -> Path:
         "播放六阶段灾变过程，展示从正常监测到应急处置的演化。",
         "切换监管端，展示区域风险总览和监管闭环。",
         "切换智库端，展示模型输入、权重、判别依据和模型服务接口。",
-        "总结平台实现多源融合、智能预警、三端协同和闭环处置。",
+        "展示只读端与超级管理员，说明最小权限和账户管理。",
+        "总结 Vercel、Render、Supabase 和 RoofRisk API v1 的协同架构。",
     ])
-    doc.add_heading("10 当前完成度与补充计划", level=1)
-    add_para(doc, "当前已完成三端门户、企业端数字孪生、顶板六阶段演示、风险场/应力场/位移场可视化、预警分值和处置建议展示。后续一周内建议重点完成正式演示视频、算法成员真实模型合并、报告人工校订和提交目录压缩整理。")
+    doc.add_heading("10 当前完成度与交付状态", level=1)
+    add_para(doc, "当前已完成真实数据与 XGBoost 接入、数字孪生、六阶段演示、多角色 RBAC、超级管理员、Supabase 持久化、Vercel/Render 生产部署和自动化测试。提交前只需录制正式演示视频、核对比赛模板并执行一键预检与打包。")
     path = OUT_DIR / "02-平台系统设计与智能预警模型研究报告.docx"
     doc.save(path)
     return path

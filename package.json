@@ -3,7 +3,10 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "preflight": "node tools/submission-preflight.mjs",
+    "preflight:offline": "node tools/submission-preflight.mjs --offline",
+    "package:submission": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-submission-package.ps1"
   },
   "engines": {
     "node": ">=18"
