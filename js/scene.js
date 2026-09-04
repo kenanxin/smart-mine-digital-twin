@@ -255,13 +255,24 @@ async function loadIntegratedMine(container) {
 }
 
 async function loadMineEnvironment() {
+  let objectUrl = null;
   try {
-    const environment = await new RGBELoader().loadAsync('./assets/hdri/quarry_02_4k.hdr');
+    const response = await fetch('./assets/hdri/quarry_02_4k.hdr');
+    if (!response.ok) throw new Error(`HDR request failed with HTTP ${response.status}`);
+    const buffer = await response.arrayBuffer();
+    const signature = new TextDecoder('ascii').decode(buffer.slice(0, 16));
+    if (!signature.startsWith('#?RADIANCE') && !signature.startsWith('#?RGBE')) {
+      throw new Error('HDR response is not a Radiance image');
+    }
+    objectUrl = URL.createObjectURL(new Blob([buffer], { type: 'application/octet-stream' }));
+    const environment = await new RGBELoader().loadAsync(objectUrl);
     environment.mapping = THREE.EquirectangularReflectionMapping;
     return environment;
   } catch (error) {
     console.warn('HDR 环境贴图不可用，已切换到基础光照', error);
     return null;
+  } finally {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
   }
 }
 

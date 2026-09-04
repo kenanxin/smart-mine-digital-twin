@@ -10,6 +10,8 @@ const sceneSource = fs.readFileSync(path.join(ROOT, 'js', 'scene.js'), 'utf8');
 test('an unavailable HDR environment cannot abort mine scene construction', () => {
   assert.match(sceneSource, /mineEnvironment\s*=\s*await loadMineEnvironment\(\)/);
   assert.match(sceneSource, /async function loadMineEnvironment\(\)[\s\S]*catch \(error\)[\s\S]*return null;/);
+  assert.match(sceneSource, /signature\.startsWith\('#\?RADIANCE'\)/);
+  assert.match(sceneSource, /HDR response is not a Radiance image/);
   assert.match(sceneSource, /const mine = isMineV2 \? await buildMineV2\(materials\)/);
 
   const environmentLoad = sceneSource.indexOf('mineEnvironment = await loadMineEnvironment()');
