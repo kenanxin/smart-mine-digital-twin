@@ -78,66 +78,6 @@
       </div>
     </section>
 
-    <!-- 顶板核心监测 -->
-    <section class="card">
-      <div class="card-header">
-        <span class="card-icon">⌁</span>
-        <span class="card-title">顶板灾变核心监测</span>
-      </div>
-      <div class="card-body">
-        <div class="threshold-overview" id="thresholdOverview" aria-live="polite">
-          <div><span>连续样本</span><b id="thresholdSampleCount">--</b></div>
-          <div><span>当前超 P95</span><b id="thresholdExceededCount">--</b></div>
-          <div><span>最高阈值指数</span><b id="thresholdPeakIndex">--</b></div>
-        </div>
-        <div class="section-heading compact-heading threshold-heading">
-          <span id="thresholdTrendTitle">真实历史 · P95 阈值指数</span>
-          <em id="thresholdTrendHint">100% = P95 阈值 · 悬停查看原始值</em>
-        </div>
-        <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对 P95 的阈值趋势">
-          <span class="chart-loading-state">正在加载真实历史数据</span>
-        </div>
-        <div class="env-grid metric-rail" id="enterpriseMetricRail">
-          <div class="env-item" data-metric-slot="0">
-            <span class="env-label">顶板离层速率</span>
-            <span class="env-value safe">--</span>
-            <span class="env-bar"><i style="width:0"></i></span>
-          </div>
-          <div class="env-item" data-metric-slot="1">
-            <span class="env-label">锚杆轴力增量</span>
-            <span class="env-value safe">--</span>
-            <span class="env-bar"><i style="width:0"></i></span>
-          </div>
-          <div class="env-item" data-metric-slot="2">
-            <span class="env-label">锚索轴力增量</span>
-            <span class="env-value safe">--</span>
-            <span class="env-bar"><i style="width:0"></i></span>
-          </div>
-          <div class="env-item" data-metric-slot="3">
-            <span class="env-label">支架阻力</span>
-            <span class="env-value safe">--</span>
-            <span class="env-bar"><i style="width:0"></i></span>
-          </div>
-          <div class="env-item" data-metric-slot="4">
-            <span class="env-label">涌水量</span>
-            <span class="env-value safe">--</span>
-            <span class="env-bar"><i style="width:0"></i></span>
-          </div>
-          <div class="env-item" data-metric-slot="5">
-            <span class="env-label">微震能量</span>
-            <span class="env-value safe">--</span>
-            <span class="env-bar"><i style="width:0"></i></span>
-          </div>
-          <div class="env-item metric-wide" data-metric-slot="6">
-            <span class="env-label">距水体/岩溶体距离</span>
-            <span class="env-value safe">--</span>
-            <span class="env-reference">P05-P95 参考范围</span>
-            <span class="env-bar"><i style="width:0"></i></span>
-          </div>
-        </div>
-        <div class="simulation-note" id="simulationNote">正在读取老师提供的真实监测数据</div>
-      </div>
-    </section>
   </aside>
 
   <!-- 中间3D场景 -->
@@ -292,6 +232,42 @@
   <div><span>原始时间</span><b id="enterpriseRecordTime">--</b></div>
   <div><span>设备</span><b id="enterpriseDeviceId">--</b></div>
   <div><span>SHA-256</span><b id="enterpriseSourceHash">--</b></div>
+</section>
+
+<!-- ============ 企业端顶板核心监测（主看板下方） ============ -->
+<section class="core-monitoring-workbench" id="enterpriseCoreMonitoring" aria-labelledby="coreMonitoringTitle">
+  <div class="core-monitoring-head">
+    <div>
+      <span class="replay-kicker"><i></i>企业端 · 下方监测工作区</span>
+      <h2 id="coreMonitoringTitle">顶板灾变核心监测</h2>
+      <p>向下滚动查看真实历史指标、P95 阈值和当前多源监测值</p>
+    </div>
+    <span class="core-monitoring-badge">真实数据 · P05 → P95</span>
+  </div>
+  <div class="card-body">
+    <div class="threshold-overview" id="thresholdOverview" aria-live="polite">
+      <div><span>连续样本</span><b id="thresholdSampleCount">--</b></div>
+      <div><span>当前超 P95</span><b id="thresholdExceededCount">--</b></div>
+      <div><span>最高阈值指数</span><b id="thresholdPeakIndex">--</b></div>
+    </div>
+    <div class="section-heading compact-heading threshold-heading">
+      <span id="thresholdTrendTitle">真实历史 · P95 阈值指数</span>
+      <em id="thresholdTrendHint">100% = P95 阈值 · 悬停查看原始值</em>
+    </div>
+    <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对 P95 的阈值趋势">
+      <span class="chart-loading-state">正在加载真实历史数据</span>
+    </div>
+    <div class="env-grid metric-rail" id="enterpriseMetricRail">
+      <div class="env-item" data-metric-slot="0"><span class="env-label">顶板离层速率</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
+      <div class="env-item" data-metric-slot="1"><span class="env-label">锚杆轴力增量</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
+      <div class="env-item" data-metric-slot="2"><span class="env-label">锚索轴力增量</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
+      <div class="env-item" data-metric-slot="3"><span class="env-label">支架阻力</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
+      <div class="env-item" data-metric-slot="4"><span class="env-label">涌水量</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
+      <div class="env-item" data-metric-slot="5"><span class="env-label">微震能量</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
+      <div class="env-item metric-wide" data-metric-slot="6"><span class="env-label">距水体/岩溶体距离</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span></div>
+    </div>
+    <div class="simulation-note" id="simulationNote">正在读取老师提供的真实监测数据</div>
+  </div>
 </section>
 
 <!-- ============ 监管端门户 ============ -->

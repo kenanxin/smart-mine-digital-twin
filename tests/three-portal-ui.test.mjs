@@ -77,3 +77,10 @@ test('replay frame updates do not refocus the Three.js camera', () => {
   assert.match(css, /body\.portal-enterprise \.replay-workbench[^}]*clear:\s*both/s);
   assert.match(css, /body\.portal-enterprise \.replay-workbench[^}]*width:\s*calc\(100% - 16px\)/s);
 });
+
+test('enterprise core monitoring is a full-width section below the main scene', () => {
+  assert.match(html, /id="enterpriseCoreMonitoring"/);
+  assert.match(html, /id="enterpriseCoreMonitoring"[\s\S]*?id="thresholdOverview"/);
+  assert.match(css, /body\.portal-enterprise \.core-monitoring-workbench[^}]*width:\s*calc\(100% - 16px\)/s);
+  assert.match(css, /body\.portal-enterprise \.core-monitoring-workbench[^}]*display:\s*block/s);
+});
