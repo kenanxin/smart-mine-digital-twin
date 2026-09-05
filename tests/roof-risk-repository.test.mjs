@@ -87,3 +87,33 @@ test('rejects an artifact with untrusted provenance', () => {
     /source SHA-256 mismatch/,
   );
 });
+
+test('replay metadata exposes all real records and stable risk markers', () => {
+  const repo = createRoofRiskRepository(artifact);
+  const meta = repo.getReplayMeta();
+  assert.equal(meta.total, 20_000);
+  assert.equal(meta.feature_schema.length, 8);
+  assert.ok(meta.default_index >= 0 && meta.default_index < meta.total);
+  assert.deepEqual(meta.event_markers.map((item) => item.risk_level), ['green', 'yellow', 'orange', 'red']);
+  assert.ok(meta.event_markers.every((item) => Number.isInteger(item.index) && item.record_id));
+});
+
+test('replay frame is bounded, chronological, traceable, and immutable', () => {
+  const repo = createRoofRiskRepository(artifact);
+  const selectedBefore = repo.getCurrent().event_id;
+  const frame = repo.getReplayFrame(1750, 48);
+  assert.equal(frame.index, 1750);
+  assert.equal(frame.total, 20_000);
+  assert.equal(frame.current.provenance.record_id, frame.current.model_output.record_id);
+  assert.ok(frame.history.points.length <= 48);
+  const times = frame.history.points.map((point) => point.timestamp);
+  assert.deepEqual(times, [...times].sort());
+  assert.equal(repo.getCurrent().event_id, selectedBefore);
+});
+
+test('replay frame rejects invalid indexes and clamps its history window', () => {
+  const repo = createRoofRiskRepository(artifact);
+  assert.throws(() => repo.getReplayFrame(-1, 48), /REPLAY_INDEX_OUT_OF_RANGE/);
+  assert.throws(() => repo.getReplayFrame(20_000, 48), /REPLAY_INDEX_OUT_OF_RANGE/);
+  assert.ok(repo.getReplayFrame(500, 10_000).history.points.length <= 120);
+});

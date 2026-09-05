@@ -32,4 +32,7 @@ test('chart data updates are built from the RoofRisk chart model', () => {
   assert.match(charts, /updateRoofRiskCharts/);
   assert.match(charts, /dataset:/);
   assert.match(charts, /sampling:\s*['"]lttb['"]/);
+  assert.match(charts, /replayTrendChart/);
+  assert.match(charts, /updateReplayChart/);
+  assert.match(charts, /dataZoom:/);
 });

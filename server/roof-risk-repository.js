@@ -149,6 +149,12 @@ function nextProgress(current) {
 function createRoofRiskRepository(artifact) {
   assertArtifact(artifact);
   const recordsById = new Map(artifact.records.map((record) => [record.id, record]));
+  const replayRecords = [...artifact.records].sort((left, right) => (
+    left.time.localeCompare(right.time)
+    || left.device_id.localeCompare(right.device_id)
+    || left.id.localeCompare(right.id)
+  ));
+  const replayIndexById = new Map(replayRecords.map((record, index) => [record.id, index]));
   const schemaByKey = new Map(artifact.feature_schema.map((feature) => [feature.key, feature]));
   const eventById = new Map();
   const eventByLabel = new Map();
@@ -368,6 +374,83 @@ function createRoofRiskRepository(artifact) {
     };
   }
 
+  function replayPoint(record) {
+    const recordEvent = eventByLabel.get(record.predicted_class) || getEvent();
+    return {
+      record_id: record.id,
+      timestamp: record.time,
+      device_id: record.device_id,
+      metrics: metricsFor(record),
+      score: record.risk_score,
+      level: recordEvent.level,
+      stage: recordEvent.stage,
+      true_class: record.true_class,
+      predicted_class: record.predicted_class,
+      confidence: record.confidence,
+    };
+  }
+
+  function getReplayMeta() {
+    const defaultRecordId = artifact.representatives.重大风险;
+    return {
+      api_version: API_VERSION,
+      data_source: DATA_SOURCE,
+      total: replayRecords.length,
+      default_index: replayIndexById.get(defaultRecordId),
+      start_timestamp: replayRecords[0].time,
+      end_timestamp: replayRecords.at(-1).time,
+      feature_schema: artifact.feature_schema,
+      event_markers: Object.entries(RISK_META).map(([label, meta]) => {
+        const recordId = artifact.representatives[label];
+        const record = getRecord(recordId);
+        return {
+          record_id: recordId,
+          index: replayIndexById.get(recordId),
+          risk_level: meta.level,
+          stage: meta.stage,
+          timestamp: record.time,
+        };
+      }),
+      provenance: {
+        source_name: artifact.source.name,
+        source_sha256: artifact.source.sha256,
+        source_row_count: artifact.source.row_count,
+        inference_built_at: artifact.inference_built_at,
+      },
+    };
+  }
+
+  function getReplayFrame(index, windowSize = 48) {
+    if (!Number.isInteger(index) || index < 0 || index >= replayRecords.length) {
+      throw new RoofRiskRepositoryError(
+        'REPLAY_INDEX_OUT_OF_RANGE',
+        `REPLAY_INDEX_OUT_OF_RANGE: index must be between 0 and ${replayRecords.length - 1}`,
+        400,
+        { index, total: replayRecords.length },
+      );
+    }
+    const boundedWindow = Math.min(120, Math.max(1, Number.isInteger(windowSize) ? windowSize : 48));
+    const start = Math.max(0, index - boundedWindow + 1);
+    const record = replayRecords[index];
+    const event = eventByLabel.get(record.predicted_class) || getEvent();
+    return {
+      api_version: API_VERSION,
+      data_source: DATA_SOURCE,
+      index,
+      total: replayRecords.length,
+      has_previous: index > 0,
+      has_next: index < replayRecords.length - 1,
+      current: currentForEvent({ ...event, recordId: record.id }),
+      history: {
+        api_version: API_VERSION,
+        record_id: record.id,
+        feature_schema: artifact.feature_schema,
+        points: replayRecords.slice(start, index + 1).map(replayPoint),
+        provenance: provenanceFor(record),
+      },
+    };
+  }
+
   return {
     getCurrent() {
       return currentForEvent(getEvent());
@@ -415,6 +498,8 @@ function createRoofRiskRepository(artifact) {
     },
 
     listEvents,
+    getReplayMeta,
+    getReplayFrame,
 
     selectEvent(eventId) {
       getEvent(eventId);

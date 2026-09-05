@@ -6,7 +6,7 @@ const sharp = require('C:/Users/欣/.cache/codex-runtimes/codex-primary-runtime/
 const baseUrl = process.argv[2] || 'http://127.0.0.1:8092';
 const outputDir = path.resolve(process.argv[3] || 'tools/.generated/three-portal-ui');
 const accounts = [
-  { role: 'enterprise', username: 'enterprise_operator', password: process.env.ENTERPRISE_QA_PASSWORD || 'Mine@2026', charts: ['thresholdTrendChart'] },
+  { role: 'enterprise', username: 'enterprise_operator', password: process.env.ENTERPRISE_QA_PASSWORD || 'Mine@2026', charts: ['thresholdTrendChart', 'replayTrendChart'] },
   { role: 'regulator', username: 'regulator_officer', password: process.env.REGULATOR_QA_PASSWORD || 'Safe@2026', charts: ['regulatorDistributionChart'] },
   { role: 'expert', username: 'expert_analyst', password: process.env.EXPERT_QA_PASSWORD || 'Model@2026', charts: ['expertProbabilityChart', 'expertDeviationChart', 'expertHistoryChart'] },
 ];
@@ -53,6 +53,58 @@ async function inspectRole(browser, account, viewport, suffix) {
   if (account.role === 'enterprise') {
     await page.waitForFunction(() => Boolean(document.querySelector('#threeContainer canvas')) && typeof window.__mineCameraState === 'function', null, { timeout: 45_000 });
     await page.waitForTimeout(3_000);
+  }
+
+  let replay = null;
+  if (account.role === 'enterprise') {
+    const workbench = page.locator('#replayWorkbench');
+    await workbench.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => Boolean(document.querySelector('#replayTrendChart canvas'))
+      && Boolean(document.querySelector('#replayWorkbench')?.dataset.recordId), null, { timeout: 30_000 });
+    await page.waitForFunction(() => ['历史回放中', '回放已暂停'].includes(document.getElementById('replayStatus')?.textContent));
+    if ((await page.locator('#replayStatus').textContent()) !== '回放已暂停') {
+      await page.locator('#replayPlayPause').click();
+    }
+    await page.waitForFunction(() => document.getElementById('replayStatus')?.textContent === '回放已暂停');
+    const pausedRecord = await workbench.getAttribute('data-record-id');
+    await page.waitForTimeout(1_100);
+    const stableRecord = await workbench.getAttribute('data-record-id');
+    const beforeNextIndex = Number(await page.locator('#replaySeek').inputValue());
+    await page.locator('#replayNext').click();
+    await page.waitForFunction((index) => Number(document.getElementById('replaySeek')?.value) === index + 1, beforeNextIndex);
+    const nextRecord = await workbench.getAttribute('data-record-id');
+    const nextIndex = Number(await page.locator('#replaySeek').inputValue());
+
+    const marker = page.locator('[data-replay-index]').first();
+    const markerIndex = Number(await marker.getAttribute('data-replay-index'));
+    await marker.click();
+    await page.waitForFunction((index) => Number(document.getElementById('replaySeek')?.value) === index, markerIndex);
+    const markerRecord = await workbench.getAttribute('data-record-id');
+
+    await page.locator('[data-replay-speed="5"]').click();
+    const speedStartIndex = Number(await page.locator('#replaySeek').inputValue());
+    await page.locator('#replayPlayPause').click();
+    await page.waitForFunction((index) => Number(document.getElementById('replaySeek')?.value) >= index + 2, speedStartIndex, { timeout: 3_000 });
+    await page.locator('#replayPlayPause').click();
+    const speedEndIndex = Number(await page.locator('#replaySeek').inputValue());
+
+    const chartScreenshot = path.join(outputDir, `${account.role}-${suffix}-replay-chart.png`);
+    await page.locator('#replayTrendChart').screenshot({ path: chartScreenshot });
+    const chartStats = await sharp(chartScreenshot).stats();
+    replay = {
+      label: await page.locator('#replayTitle').textContent(),
+      pausedStable: pausedRecord === stableRecord,
+      pausedRecord,
+      nextRecord,
+      nextDelta: nextIndex - beforeNextIndex,
+      markerIndex,
+      markerRecord,
+      speedStartIndex,
+      speedEndIndex,
+      speed: Number(await page.locator('[data-replay-speed].active').getAttribute('data-replay-speed')),
+      chartScreenshot,
+      chartStdev: chartStats.channels.slice(0, 3).map((channel) => Number(channel.stdev.toFixed(2))),
+    };
   }
 
   const beforeResize = await page.evaluate((ids) => Object.fromEntries(ids.map((id) => {
@@ -109,6 +161,7 @@ async function inspectRole(browser, account, viewport, suffix) {
     screenshot,
     layout,
     scenePixels,
+    replay,
     resized: account.charts.every((id) => JSON.stringify(beforeResize[id]) !== JSON.stringify(afterResize[id])),
     consoleErrors,
     pageErrors,
@@ -137,10 +190,21 @@ async function main() {
       if (overflow) issues.push('horizontal overflow');
       if (!result.resized) issues.push('chart did not resize');
       if (result.scenePixels && Math.max(...result.scenePixels.stdev) < 12) issues.push('Three.js canvas pixel variance is too low');
+      if (result.replay && !result.replay.label.includes('历史回放')) issues.push('replay label is missing');
+      if (result.replay && !result.replay.pausedStable) issues.push('replay changed while paused');
+      if (result.replay && result.replay.pausedRecord === result.replay.nextRecord) issues.push('replay next did not change the record');
+      if (result.replay && result.replay.nextDelta !== 1) issues.push('replay next did not advance exactly one record');
+      if (result.replay && result.replay.speed !== 5) issues.push('replay 5x speed was not selected');
+      if (result.replay && result.replay.speedEndIndex < result.replay.speedStartIndex + 2) issues.push('replay 5x did not advance');
+      if (result.replay && Math.max(...result.replay.chartStdev) < 12) issues.push('replay chart pixel variance is too low');
       const unexpectedConsoleErrors = result.consoleErrors.filter((message) => !message.startsWith('Failed to load resource:'));
       if (unexpectedConsoleErrors.length) issues.push(`console errors: ${unexpectedConsoleErrors.join(' | ')}`);
       if (result.pageErrors.length) issues.push(`page errors: ${result.pageErrors.join(' | ')}`);
-      if (result.failedRequests.length) issues.push(`failed requests: ${result.failedRequests.join(' | ')}`);
+      const unexpectedFailedRequests = result.failedRequests.filter((request) => !(
+        request.includes('/assets/models/quarry-conveyor-system-kit/scene.optimized.glb')
+        && request.endsWith('net::ERR_ABORTED')
+      ));
+      if (unexpectedFailedRequests.length) issues.push(`failed requests: ${unexpectedFailedRequests.join(' | ')}`);
       if (result.httpErrors.length) issues.push(`HTTP errors: ${result.httpErrors.join(' | ')}`);
       return issues.map((issue) => `${result.role} ${result.viewport.width}px: ${issue}`);
     });

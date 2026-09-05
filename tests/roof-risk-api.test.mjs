@@ -260,3 +260,29 @@ test('closed-loop mutations enforce the approved role matrix', async () => {
     }
   }, { authenticate: false });
 });
+
+test('authenticated replay endpoints expose metadata and a traceable frame', async () => {
+  await withServer(async (baseUrl, cookie) => {
+    const meta = await requestJson(`${baseUrl}/api/roof-risk/replay/meta`, {}, cookie);
+    assert.equal(meta.response.status, 200);
+    assert.equal(meta.payload.total, 20_000);
+    const frame = await requestJson(
+      `${baseUrl}/api/roof-risk/replay/frame?index=${meta.payload.default_index}&window=48`,
+      {},
+      cookie,
+    );
+    assert.equal(frame.response.status, 200);
+    assert.equal(frame.payload.current.provenance.record_id, frame.payload.current.model_output.record_id);
+    assert.equal(frame.payload.history.feature_schema.length, 8);
+  });
+});
+
+test('replay endpoints reject unauthenticated and invalid index requests', async () => {
+  await withServer(async (baseUrl, cookie) => {
+    const unauthenticated = await requestJson(`${baseUrl}/api/roof-risk/replay/meta`);
+    assert.equal(unauthenticated.response.status, 401);
+    const invalid = await requestJson(`${baseUrl}/api/roof-risk/replay/frame?index=nope`, {}, cookie);
+    assert.equal(invalid.response.status, 400);
+    assert.equal(invalid.payload.error.code, 'INVALID_REPLAY_INDEX');
+  });
+});

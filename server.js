@@ -340,6 +340,23 @@ function createAppServer(options = {}) {
         return;
       }
 
+      if (pathname === '/api/roof-risk/replay/meta') {
+        assertMethod(req, ['GET']);
+        sendJson(res, repository.getReplayMeta());
+        return;
+      }
+
+      if (pathname === '/api/roof-risk/replay/frame') {
+        assertMethod(req, ['GET']);
+        const index = Number(requestUrl.searchParams.get('index'));
+        const windowSize = Number(requestUrl.searchParams.get('window') || 48);
+        if (!Number.isInteger(index)) {
+          throw new RoofRiskRepositoryError('INVALID_REPLAY_INDEX', 'index must be an integer', 400);
+        }
+        sendJson(res, repository.getReplayFrame(index, windowSize));
+        return;
+      }
+
       if (pathname === '/api/roof-risk/explain') {
         assertMethod(req, ['GET']);
         sendJson(res, repository.getExplain());

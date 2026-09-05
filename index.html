@@ -87,7 +87,7 @@
       <div class="card-body">
         <div class="threshold-overview" id="thresholdOverview" aria-live="polite">
           <div><span>连续样本</span><b id="thresholdSampleCount">--</b></div>
-          <div><span>超 P95 指标</span><b id="thresholdExceededCount">--</b></div>
+          <div><span>当前超 P95</span><b id="thresholdExceededCount">--</b></div>
           <div><span>最高阈值指数</span><b id="thresholdPeakIndex">--</b></div>
         </div>
         <div class="section-heading compact-heading threshold-heading">
@@ -496,6 +496,70 @@
         <p><span>POST /api/roof-risk/closed-loop/advance</span><b>闭环状态推进</b></p>
       </div>
     </section>
+  </div>
+</section>
+
+<!-- ============ 企业端真实数据历史回放 ============ -->
+<section class="replay-workbench" id="replayWorkbench" aria-labelledby="replayTitle" data-record-id="">
+  <header class="replay-header">
+    <div>
+      <span class="replay-kicker"><i></i>老师 CSV · 可追溯回放</span>
+      <h2 id="replayTitle">真实监测数据历史回放</h2>
+      <p>七项监测指标、XGBoost 判定与井下风险场使用同一条原始记录同步推进</p>
+    </div>
+    <div class="replay-source">
+      <span id="replayStatus">正在读取</span>
+      <b>teacher_roof_monitoring.csv</b>
+      <em>20,000 条真实记录</em>
+    </div>
+  </header>
+
+  <div class="replay-summary-grid">
+    <div><span>当前记录</span><b id="replayIndex">-- / 20,000</b><em id="replayRecordId">--</em></div>
+    <div><span>CSV 原始时间</span><b id="replayTimestamp">--</b><em id="replayDevice">设备 --</em></div>
+    <div class="risk"><span>综合风险</span><b id="replayRisk">--</b><em id="replayRiskStage">等待判定</em></div>
+    <div><span>模型结果</span><b id="replayPrediction">--</b><em id="replayConfidence">置信度 --</em></div>
+  </div>
+
+  <div class="replay-analysis">
+    <section class="replay-pane replay-metrics-pane">
+      <div class="replay-pane-head"><strong>当前多源指标</strong><span>P05 → P95</span></div>
+      <div class="replay-metric-grid" id="replayMetricGrid"></div>
+    </section>
+    <section class="replay-pane replay-chart-pane">
+      <div class="replay-pane-head"><strong>真实连续趋势</strong><span>相对 P95 指数 · 支持缩放</span></div>
+      <div class="role-chart" id="replayTrendChart" role="img" aria-label="真实 CSV 多指标历史回放趋势"></div>
+    </section>
+    <section class="replay-pane replay-events-pane">
+      <div class="replay-pane-head"><strong>风险节点</strong><span>点击快速定位</span></div>
+      <div class="replay-event-track" id="replayEventTrack"></div>
+    </section>
+  </div>
+
+  <div class="replay-controls">
+    <div class="replay-transport">
+      <button id="replayPrevious" type="button" aria-label="上一条记录" title="上一条记录">|◀</button>
+      <button class="primary" id="replayPlayPause" type="button" aria-label="播放历史数据" title="播放历史数据">▶</button>
+      <button id="replayNext" type="button" aria-label="下一条记录" title="下一条记录">▶|</button>
+    </div>
+    <label class="replay-seek-wrap" for="replaySeek">
+      <span id="replayStartTime">数据起点</span>
+      <input id="replaySeek" type="range" min="0" max="19999" value="0" step="1">
+      <span id="replayEndTime">数据终点</span>
+    </label>
+    <div class="replay-speed" id="replaySpeed" aria-label="回放速度">
+      <button class="active" type="button" data-replay-speed="1">1×</button>
+      <button type="button" data-replay-speed="2">2×</button>
+      <button type="button" data-replay-speed="5">5×</button>
+    </div>
+    <label class="replay-loop"><input id="replayLoop" type="checkbox"><span>循环</span></label>
+  </div>
+
+  <div class="replay-trace">
+    <span>数据源哈希 <b id="replaySourceHash">86D4C2FB1927</b></span>
+    <span>真实标签 <b id="replayTrueClass">--</b></span>
+    <span>预测标签 <b id="replayPredictedClass">--</b></span>
+    <span>说明 <b>历史数据回放，非实时传感器采集</b></span>
   </div>
 </section>
 

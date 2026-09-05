@@ -45,3 +45,29 @@ test('main controller fetches current history and events then updates charts fro
   assert.match(main, /clearRoofRiskCharts/);
   assert.doesNotMatch(main, /initEnvChart|initProdChart|initAlertChart|updateCharts\(/);
 });
+
+test('enterprise portal exposes an explicit real-history replay workbench', () => {
+  for (const id of [
+    'replayWorkbench', 'replayTrendChart', 'replaySeek', 'replayPlayPause',
+    'replayPrevious', 'replayNext', 'replaySpeed', 'replayLoop',
+  ]) assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(html, /真实监测数据历史回放/);
+  assert.doesNotMatch(html, /实时数据回放/);
+  assert.match(css, /body\.portal-enterprise[^}]*overflow-y:\s*auto/s);
+  assert.match(css, /\.replay-analysis[^}]*grid-template-columns:/s);
+  assert.match(css, /#replayTrendChart[^}]*height:\s*320px/s);
+});
+
+test('enterprise main controller owns one replay controller and authenticated replay calls', () => {
+  assert.match(main, /createReplayController/);
+  assert.match(main, /\/api\/roof-risk\/replay\/meta/);
+  assert.match(main, /\/api\/roof-risk\/replay\/frame/);
+  assert.match(main, /applyReplayFrame/);
+});
+
+test('replay summary risk color follows the active real record level', () => {
+  assert.match(main, /workbench\.dataset\.riskLevel = payload\.risk\?\.level \|\| 'green'/);
+  assert.match(css, /data-risk-level="yellow"/);
+  assert.match(css, /data-risk-level="orange"/);
+  assert.match(css, /data-risk-level="red"/);
+});

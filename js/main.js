@@ -4,11 +4,12 @@
    ============================================================ */
 
 import { initScene, switchToOverview, switchToSurface, switchToUnderground, focusMineEquipment, focusRoofWarningStage, setRoofFieldMode, disasterEffects } from './scene.js';
-import { clearRoofRiskCharts, disposeCharts, initPortalCharts, resizeCharts, updateRoofRiskCharts } from './charts.js';
+import { clearRoofRiskCharts, disposeCharts, initPortalCharts, resizeCharts, updateReplayChart, updateRoofRiskCharts } from './charts.js';
 import { init, startDisaster, resetDisaster, getEquipFaults, getEnvData, isActive, getState, tick, getDisasterList } from './disaster.js';
 import { EQUIPMENT, METRICS, getMetricLevel, getMineState, updateMineState } from './mine-data.js';
 import { mapRoofRiskViewModel, unavailableRoofRiskViewModel } from './roof-risk-view-model.mjs';
 import { authFetch, bootstrapAuthenticatedPortal } from './auth-client.mjs';
+import { createReplayController } from './roof-risk-replay-controller.mjs';
 
 let activeEquipmentId = null;
 let lastEquipmentListSignature = '';
@@ -16,6 +17,10 @@ let roofDemoTimer = null;
 let roofDemoIndex = -1;
 let roofDemoPlaying = false;
 let latestRoofRiskApiPayload = null;
+let latestRoofRiskEventsPayload = {};
+let replayController = null;
+let replayMeta = null;
+let lastReplayStageId = null;
 
 const DEMO_METRIC_KEYS = ['roofPressure', 'separation', 'subsidence', 'supportResistance', 'anchorLoad', 'microseismicEnergy'];
 
@@ -325,6 +330,159 @@ function renderExpertModel(viewModel) {
   setText('apiRecordTime', viewModel.provenance.timestamp);
   setText('apiSourceHash', viewModel.provenance.hashShort);
   setText('apiModelAccuracy', viewModel.model.accuracyText);
+}
+
+function replayMetricMarkup(metric) {
+  const progress = Number.isFinite(metric.percent) ? metric.percent : 0;
+  const p05 = Number.isFinite(metric.p05) ? metric.p05 : '--';
+  const p95 = Number.isFinite(metric.p95) ? metric.p95 : '--';
+  return `
+    <div class="replay-metric ${metric.status}" style="--metric-progress:${progress}%">
+      <div class="replay-metric-head"><span>${metric.label}</span><b>${metric.text}</b></div>
+      <div class="replay-metric-reference"><span>P05 ${p05}</span><span>P95 ${p95} ${metric.unit || ''}</span></div>
+      <span class="replay-metric-bar"><i></i></span>
+    </div>
+  `;
+}
+
+function renderReplayEvents(meta) {
+  const track = document.getElementById('replayEventTrack');
+  if (!track) return;
+  const levelLabel = { green: '低风险', yellow: '一般风险', orange: '较大风险', red: '重大风险' };
+  track.innerHTML = (meta.event_markers || []).map((marker) => `
+    <button class="replay-event ${marker.risk_level}" type="button" data-replay-index="${marker.index}">
+      <i></i>
+      <span><strong>${levelLabel[marker.risk_level] || marker.stage}</strong><small>${marker.timestamp}</small></span>
+      <b>#${Number(marker.index) + 1}</b>
+    </button>
+  `).join('');
+  track.querySelectorAll('[data-replay-index]').forEach((button) => {
+    button.addEventListener('click', () => replayController?.seek(Number(button.dataset.replayIndex)));
+  });
+}
+
+function renderReplayControllerState(state) {
+  const status = document.getElementById('replayStatus');
+  const playPause = document.getElementById('replayPlayPause');
+  const labels = {
+    idle: '准备回放',
+    playing: '历史回放中',
+    paused: '回放已暂停',
+    ended: '已到数据末尾',
+    error: '回放中断',
+  };
+  if (status) {
+    status.textContent = state.error || labels[state.status] || '历史回放';
+    status.className = state.status;
+  }
+  if (playPause) {
+    const playing = state.status === 'playing';
+    playPause.textContent = playing ? '❚❚' : '▶';
+    playPause.setAttribute('aria-label', playing ? '暂停历史数据回放' : '播放历史数据');
+    playPause.title = playing ? '暂停历史数据回放' : '播放历史数据';
+  }
+  document.querySelectorAll('[data-replay-speed]').forEach((button) => {
+    button.classList.toggle('active', Number(button.dataset.replaySpeed) === state.speed);
+  });
+  const loop = document.getElementById('replayLoop');
+  if (loop) loop.checked = state.loop;
+  const previous = document.getElementById('replayPrevious');
+  const next = document.getElementById('replayNext');
+  if (previous) previous.disabled = state.index <= 0;
+  if (next) next.disabled = state.index >= (replayMeta?.total || 1) - 1 && !state.loop;
+}
+
+function applyReplayFrame(frame) {
+  const payload = frame.current;
+  const viewModel = mapRoofRiskViewModel(payload);
+  latestRoofRiskApiPayload = payload;
+
+  setText('replayIndex', `${frame.index + 1} / ${new Intl.NumberFormat('zh-CN').format(frame.total)}`);
+  setText('replayRecordId', viewModel.provenance.recordId);
+  setText('replayTimestamp', viewModel.provenance.timestamp);
+  setText('replayDevice', `设备 ${viewModel.provenance.deviceId}`);
+  setText('replayRisk', `${payload.risk?.score ?? '--'} · ${formatRiskLevel(payload.risk?.level)}`);
+  setText('replayRiskStage', payload.risk?.stage || '--');
+  setText('replayPrediction', payload.model_output?.predicted_class || '--');
+  setText('replayConfidence', Number.isFinite(Number(payload.model_output?.confidence))
+    ? `置信度 ${(Number(payload.model_output.confidence) * 100).toFixed(2)}%`
+    : '置信度 --');
+  setText('replaySourceHash', viewModel.provenance.hashShort);
+  setText('replayTrueClass', payload.model_output?.true_class || '--');
+  setText('replayPredictedClass', payload.model_output?.predicted_class || '--');
+  setText('enterpriseSourceName', payload.provenance?.source_name || 'teacher_roof_monitoring.csv');
+  setText('enterpriseRecordId', viewModel.provenance.recordId);
+  setText('enterpriseRecordTime', viewModel.provenance.timestamp);
+  setText('enterpriseDeviceId', viewModel.provenance.deviceId);
+  setText('enterpriseSourceHash', viewModel.provenance.hashShort);
+
+  const metricGrid = document.getElementById('replayMetricGrid');
+  if (metricGrid) metricGrid.innerHTML = viewModel.metrics.filter((metric) => metric.key !== 'data_quality').map(replayMetricMarkup).join('');
+  const seek = document.getElementById('replaySeek');
+  if (seek) seek.value = String(frame.index);
+  const workbench = document.getElementById('replayWorkbench');
+  if (workbench) {
+    workbench.dataset.recordId = viewModel.provenance.recordId;
+    workbench.dataset.riskLevel = payload.risk?.level || 'green';
+  }
+
+  renderEnterpriseMetricSlots(viewModel);
+  showRoofWarningPanelFromApi(payload);
+  renderApiDecisionPanel(payload);
+  updateReplayChart({ current: payload, history: frame.history });
+  updateRoofRiskCharts({ current: payload, history: frame.history, events: latestRoofRiskEventsPayload });
+
+  const stageId = stageIdFromApiRisk(payload.risk);
+  if (stageId !== lastReplayStageId) {
+    if (focusRoofWarningStage(stageId)) lastReplayStageId = stageId;
+  }
+}
+
+async function loadReplayFrame(index) {
+  const response = await authFetch(`/api/roof-risk/replay/frame?index=${index}&window=72`, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`回放接口异常 HTTP ${response.status}`);
+  return response.json();
+}
+
+async function initReplayWorkbench() {
+  const workbench = document.getElementById('replayWorkbench');
+  if (!workbench) return;
+  try {
+    const response = await authFetch('/api/roof-risk/replay/meta', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`回放元数据异常 HTTP ${response.status}`);
+    replayMeta = await response.json();
+    setText('replayStartTime', replayMeta.start_timestamp || '数据起点');
+    setText('replayEndTime', replayMeta.end_timestamp || '数据终点');
+    const seek = document.getElementById('replaySeek');
+    seek.max = String(replayMeta.total - 1);
+    seek.value = String(replayMeta.default_index);
+    renderReplayEvents(replayMeta);
+
+    replayController = createReplayController({
+      total: replayMeta.total,
+      initialIndex: replayMeta.default_index,
+      intervalMs: 900,
+      loadFrame: loadReplayFrame,
+      onFrame: applyReplayFrame,
+      onState: renderReplayControllerState,
+    });
+    document.getElementById('replayPrevious')?.addEventListener('click', () => replayController.previous());
+    document.getElementById('replayNext')?.addEventListener('click', () => replayController.next());
+    document.getElementById('replayPlayPause')?.addEventListener('click', () => {
+      if (replayController.snapshot().status === 'playing') replayController.pause();
+      else replayController.play();
+    });
+    seek.addEventListener('change', () => replayController.seek(Number(seek.value)));
+    document.querySelectorAll('[data-replay-speed]').forEach((button) => {
+      button.addEventListener('click', () => replayController.setSpeed(Number(button.dataset.replaySpeed)));
+    });
+    document.getElementById('replayLoop')?.addEventListener('change', (event) => replayController.setLoop(event.target.checked));
+
+    await replayController.seek(replayMeta.default_index);
+    replayController.play();
+  } catch (error) {
+    renderReplayControllerState({ status: 'error', index: 0, speed: 1, loop: false, error: error.message });
+  }
 }
 
 function stageIdFromApiRisk(risk = {}) {
@@ -1098,6 +1256,7 @@ async function refreshRoofRiskApiStatus() {
       currentResponse.json(), historyResponse.json(), eventsResponse.json(),
     ]);
     latestRoofRiskApiPayload = payload;
+    latestRoofRiskEventsPayload = eventsPayload;
     setText('apiVersion', payload.api_version ?? 'RoofRisk API v1');
     setText('apiDataSource', normalizeDataSourceLabel(payload.data_source));
     setText('apiEventId', payload.event_id ?? '--');
@@ -1198,6 +1357,7 @@ async function initApp(authenticatedUser) {
   setupDisasterPanel();
   setupEquipmentFocus();
   await refreshRoofRiskApiStatus();
+  if (authenticatedUser.role === 'enterprise') await initReplayWorkbench();
   refreshData();
   renderEquipList();
   renderAlertList();
@@ -1213,7 +1373,10 @@ async function initApp(authenticatedUser) {
   gameLoop();
 
   window.addEventListener('resize', onResize);
-  window.addEventListener('beforeunload', disposeCharts, { once: true });
+  window.addEventListener('beforeunload', () => {
+    replayController?.dispose();
+    disposeCharts();
+  }, { once: true });
 
   console.log('✅ 平台启动完成！');
 }

@@ -2,6 +2,7 @@ import { buildRoofRiskChartModel } from './roof-risk-chart-model.mjs';
 
 const CHART_IDS = [
   'thresholdTrendChart',
+  'replayTrendChart',
   'regulatorDistributionChart',
   'expertProbabilityChart',
   'expertDeviationChart',
@@ -109,15 +110,19 @@ function emptyGraphic(message) {
   }];
 }
 
-function thresholdTrendOption(model) {
+function thresholdTrendOption(model, {
+  seriesLimit = 4,
+  showEndLabel = true,
+  includeDataZoom = false,
+} = {}) {
   const trend = model.thresholdTrend;
-  const visibleSeries = trend.series.slice(0, 4);
+  const visibleSeries = trend.series.slice(0, seriesLimit);
   if (!visibleSeries.length) return { series: [], graphic: emptyGraphic('暂无连续历史数据') };
   const isRiskScore = trend.mode === 'risk-score';
   const referenceLabel = isRiskScore ? '较大风险线' : 'P95 阈值';
   return {
     animationDuration: 520,
-    grid: { left: 43, right: 14, top: 48, bottom: 30, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
+    grid: { left: 43, right: showEndLabel ? 34 : 14, top: 48, bottom: includeDataZoom ? 54 : 30, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
     legend: { top: 3, left: 0, right: 0, type: 'scroll', itemWidth: 16, itemHeight: 3, itemGap: 12, textStyle: { fontSize: 10 } },
     tooltip: {
       ...baseTooltip('axis'),
@@ -153,7 +158,7 @@ function thresholdTrendOption(model) {
       sampling: 'lttb',
       lineStyle: { width: index === 0 ? 2.6 : 1.6, shadowBlur: index === 0 ? 7 : 0, shadowColor: SERIES_COLORS[index] },
       areaStyle: index === 0 ? { opacity: 0.1 } : undefined,
-      endLabel: { show: index === 0, formatter: (params) => isRiskScore ? `${numberLabel(params.value?.[1], 0)} 分` : `${numberLabel(params.value?.[1], 0)}%`, color: SERIES_COLORS[index], fontSize: 10 },
+      endLabel: { show: showEndLabel && index === 0, formatter: (params) => isRiskScore ? `${numberLabel(params.value?.[1], 0)} 分` : `${numberLabel(params.value?.[1], 0)}%`, color: SERIES_COLORS[index], fontSize: 10 },
       labelLayout: { moveOverlap: 'shiftY' },
       emphasis: { focus: 'series' },
       data: item.points.map((point, pointIndex) => ({
@@ -186,6 +191,20 @@ function thresholdTrendOption(model) {
           ],
       } : undefined,
     })),
+    dataZoom: includeDataZoom ? [
+      { type: 'inside', filterMode: 'none' },
+      {
+        type: 'slider',
+        filterMode: 'none',
+        height: 15,
+        bottom: 8,
+        borderColor: '#30414a',
+        backgroundColor: '#111a1f',
+        fillerColor: 'rgba(50,199,217,0.16)',
+        handleStyle: { color: '#32c7d9', borderColor: '#32c7d9' },
+        textStyle: { color: '#70838d', fontSize: 9 },
+      },
+    ] : undefined,
   };
 }
 
@@ -274,6 +293,19 @@ export function updateRoofRiskCharts({ current = {}, history = {}, events = {} }
     chart.setOption(option, { notMerge: currentSeries !== nextSeries });
   });
   return model;
+}
+
+export function updateReplayChart({ current = {}, history = {} } = {}) {
+  const chart = chartFor('replayTrendChart');
+  if (!chart) return null;
+  const model = buildRoofRiskChartModel(current, history, {});
+  const option = thresholdTrendOption(model, {
+    seriesLimit: 7,
+    showEndLabel: true,
+    includeDataZoom: true,
+  });
+  chart.setOption(option, { notMerge: true });
+  return model.thresholdTrend;
 }
 
 export function clearRoofRiskCharts(message = '真实数据暂不可用') {
