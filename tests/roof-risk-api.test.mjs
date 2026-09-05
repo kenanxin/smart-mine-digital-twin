@@ -81,6 +81,9 @@ test('event selection updates current, history, and explanation together', async
     const explain = await requestJson(`${baseUrl}/api/roof-risk/explain`, {}, cookie);
     assert.equal(current.payload.risk.level, 'green');
     assert.equal(history.payload.event_id, current.payload.event_id);
+    assert.equal(history.payload.feature_schema.length, 8);
+    assert.equal(Object.keys(history.payload.points[0].metrics).length, 8);
+    assert.equal(history.payload.points[0].metrics.roof_separation_rate.unit, 'mm/d');
     assert.equal(explain.payload.model_output.record_id, current.payload.model_output.record_id);
   });
 });

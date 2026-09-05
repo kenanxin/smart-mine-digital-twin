@@ -382,6 +382,7 @@ function createRoofRiskRepository(artifact) {
         return {
           record_id: record.id,
           timestamp: record.time,
+          metrics: metricsFor(record),
           score: record.risk_score,
           level: recordEvent.level,
           stage: recordEvent.stage,
@@ -394,6 +395,7 @@ function createRoofRiskRepository(artifact) {
         api_version: API_VERSION,
         event_id: event.eventId,
         record_id: event.recordId,
+        feature_schema: artifact.feature_schema,
         points,
         provenance: provenanceFor(getRecord(event.recordId)),
       };
