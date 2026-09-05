@@ -37,40 +37,42 @@ function buildThresholdTrend(current, history) {
     : Array.isArray(current?.feature_schema) ? current.feature_schema : [];
   const points = Array.isArray(history?.points) ? history.points : [];
 
-  const series = schema
-    .filter((feature) => Number.isFinite(Number(feature.p95)) && Number(feature.p95) !== 0)
+  const series = sortFeatureSchema(schema)
+    .filter((feature) => hasReferenceRange(feature))
     .map((feature) => ({
       key: feature.key,
       label: feature.label || feature.key,
       unit: feature.unit || '',
+      direction: referenceDirection(feature.key),
       points: points
         .map((point) => {
           const timestamp = parseRoofRiskTimestamp(point.timestamp);
           const metric = point.metrics?.[feature.key];
           const rawValue = Number(metric?.value);
           if (!Number.isFinite(timestamp) || !Number.isFinite(rawValue)) return null;
+          const index = referenceIndex(rawValue, feature);
+          if (!Number.isFinite(index)) return null;
           return {
             timestamp,
-            index: round((rawValue / Number(feature.p95)) * 100),
+            index: round(index),
             rawValue,
             unit: metric?.unit ?? feature.unit ?? '',
+            p05: Number(feature.p05),
+            p95: Number(feature.p95),
+            direction: referenceDirection(feature.key),
+            deviated: referenceDeviationSide(rawValue, feature) !== null,
             sourceTimestamp: point.timestamp,
           };
         })
         .filter(Boolean)
         .sort((left, right) => left.timestamp - right.timestamp),
     }))
-    .filter((item) => item.points.length)
-    .sort((left, right) => {
-      const leftLatest = left.points.at(-1)?.index ?? Number.NEGATIVE_INFINITY;
-      const rightLatest = right.points.at(-1)?.index ?? Number.NEGATIVE_INFINITY;
-      return rightLatest - leftLatest;
-    });
+    .filter((item) => item.points.length);
 
   if (series.length) {
     const peak = Math.max(...series.flatMap((item) => item.points.map((point) => point.index)));
     return {
-      mode: 'p95',
+      mode: 'reference-deviation',
       reference: 100,
       sampleCount: Math.max(...series.map((item) => item.points.length)),
       exceededCount: series.filter((item) => (item.points.at(-1)?.index ?? 0) >= 100).length,
@@ -151,3 +153,10 @@ export function buildRoofRiskChartModel(current = {}, history = {}, events = {})
     distribution: buildDistribution(events),
   };
 }
+import {
+  hasReferenceRange,
+  referenceDeviationSide,
+  referenceDirection,
+  referenceIndex,
+  sortFeatureSchema,
+} from './roof-risk-reference.mjs';

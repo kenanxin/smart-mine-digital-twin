@@ -55,6 +55,23 @@ test('maps all eight real inputs with their actual labels and units', () => {
   assert.equal(view.metrics[3].text, '8.6 MPa');
   assert.equal(view.metrics[7].text, '正常');
   assert.equal(view.metrics[0].percent, 62);
+  assert.equal(view.metrics[0].referenceDirection, 'high');
+  assert.equal(view.metrics[0].isReferenceDeviation, false);
+  assert.equal(view.metrics[6].referenceDirection, 'low');
+});
+
+test('keeps metrics in fixed business order and marks low-side statistical deviation', () => {
+  const payload = structuredClone(samplePayload);
+  payload.feature_schema = [...payload.feature_schema].reverse();
+  payload.metrics.distance_to_water.value = -10;
+  const view = mapRoofRiskViewModel(payload);
+  assert.deepEqual(view.metrics.slice(0, 3).map((item) => item.key), [
+    'roof_separation_rate', 'bolt_axial_force_increment', 'cable_axial_force_increment',
+  ]);
+  const distance = view.metrics.find((item) => item.key === 'distance_to_water');
+  assert.equal(distance.isReferenceDeviation, true);
+  assert.equal(distance.referenceDeviationSide, 'low');
+  assert.equal(distance.value, -10);
 });
 
 test('maps model probabilities in the fixed low-to-severe order', () => {

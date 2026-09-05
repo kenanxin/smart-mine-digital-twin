@@ -5,10 +5,6 @@ const PROBABILITY_META = [
   ['severe', '重大风险'],
 ];
 
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
 function metricPrecision(unit, value) {
   if (!Number.isFinite(value)) return 0;
   if (unit === 'J') return Math.abs(value) >= 100 ? 0 : 1;
@@ -20,14 +16,6 @@ function formatMetricValue(value, unit) {
   if (!Number.isFinite(value)) return '--';
   const formatted = value.toFixed(metricPrecision(unit, value));
   return unit ? `${formatted} ${unit}` : formatted;
-}
-
-function metricPercent(value, schema) {
-  if (!Number.isFinite(value)) return null;
-  const low = Number(schema?.p05);
-  const high = Number(schema?.p95);
-  if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) return 0;
-  return Math.round(clamp((value - low) / (high - low), 0, 1) * 100);
 }
 
 function statusClass(status) {
@@ -70,10 +58,11 @@ export function mapRoofRiskViewModel(payload) {
     return unavailableRoofRiskViewModel('接口未返回老师提供的真实监测数据');
   }
 
-  const schema = Array.isArray(payload.feature_schema) ? payload.feature_schema : [];
+  const schema = sortFeatureSchema(Array.isArray(payload.feature_schema) ? payload.feature_schema : []);
   const schemaByKey = new Map(schema.map((item) => [item.key, item]));
   const metrics = schema.map((item) => {
     const metric = payload.metrics?.[item.key] || {};
+    const deviationSide = referenceDeviationSide(metric.value, item);
     return {
       key: item.key,
       label: item.label || item.key,
@@ -82,9 +71,13 @@ export function mapRoofRiskViewModel(payload) {
       unit: metric.unit ?? item.unit ?? null,
       text: formatMetricValue(metric.value, metric.unit ?? item.unit ?? null),
       status: statusClass(metric.status),
-      percent: metricPercent(Number(metric.value), schemaByKey.get(item.key)),
+      percent: referencePosition(metric.value, schemaByKey.get(item.key)),
       p05: Number.isFinite(Number(item.p05)) ? Number(item.p05) : null,
       p95: Number.isFinite(Number(item.p95)) ? Number(item.p95) : null,
+      referenceAvailable: hasReferenceRange(item),
+      referenceDirection: referenceDirection(item.key),
+      referenceDeviationSide: deviationSide,
+      isReferenceDeviation: deviationSide !== null,
     };
   });
 
@@ -129,3 +122,10 @@ export function mapRoofRiskViewModel(payload) {
     },
   };
 }
+import {
+  hasReferenceRange,
+  referenceDeviationSide,
+  referenceDirection,
+  referencePosition,
+  sortFeatureSchema,
+} from './roof-risk-reference.mjs';
