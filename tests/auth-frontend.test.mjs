@@ -7,6 +7,25 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 
+function readJpegSize(filePath) {
+  const bytes = fs.readFileSync(filePath);
+  assert.equal(bytes.readUInt16BE(0), 0xffd8);
+  let offset = 2;
+  while (offset + 8 < bytes.length) {
+    if (bytes[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+    const marker = bytes[offset + 1];
+    if (marker >= 0xc0 && marker <= 0xc3) {
+      return { height: bytes.readUInt16BE(offset + 5), width: bytes.readUInt16BE(offset + 7) };
+    }
+    const length = bytes.readUInt16BE(offset + 2);
+    offset += length + 2;
+  }
+  throw new Error('JPEG size marker not found');
+}
+
 test('login form is labeled, accessible, and does not ask users to choose a role', () => {
   const html = read('login.html');
   const css = read('css/login.css');
@@ -55,8 +74,19 @@ test('login and portal clients accept viewer as a read-only expert-layout role',
 
 test('login background is a local non-empty raster asset', () => {
   const imagePath = path.join(ROOT, 'images', 'login-underground.jpg');
+  const capturePath = path.join(ROOT, 'tools', 'capture-login-background.cjs');
   assert.equal(fs.existsSync(imagePath), true);
   assert.ok(fs.statSync(imagePath).size > 50_000);
+  assert.deepEqual(readJpegSize(imagePath), { width: 1600, height: 1000 });
+  assert.equal(fs.existsSync(capturePath), true);
+
+  const capture = fs.readFileSync(capturePath, 'utf8');
+  assert.match(capture, /viewport:\s*\{\s*width:\s*1600,\s*height:\s*1000/);
+  assert.match(capture, /#threeContainer canvas/);
+  assert.match(capture, /\.mine-v2-label/);
+  assert.match(capture, /scene=v2&view=underground/);
+  assert.doesNotMatch(capture, /field=risk/);
+  assert.match(capture, /type:\s*['"]jpeg['"]/);
 });
 
 test('application header exposes identity and logout instead of a portal switch', () => {

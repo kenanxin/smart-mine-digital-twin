@@ -1250,6 +1250,12 @@ export function setRoofFieldMode(mode) {
   return ok;
 }
 
+export function setRoofFieldVisible(visible) {
+  if (!roofFieldCloud) return false;
+  roofFieldCloud.visible = Boolean(visible);
+  return true;
+}
+
 function applyRoofFieldStage(stageId) {
   roofFieldStage = stageId ?? 'normalMonitor';
   updateRoofFieldCloud(roofFieldCloud, roofFieldStage, null, performance.now() * 0.001, true);
