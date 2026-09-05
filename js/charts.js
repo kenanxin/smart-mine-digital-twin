@@ -119,9 +119,9 @@ function thresholdTrendOption(model, {
   const visibleSeries = trend.series.slice(0, seriesLimit);
   if (!visibleSeries.length) return { series: [], graphic: emptyGraphic('暂无连续历史数据') };
   const isRiskScore = trend.mode === 'risk-score';
-  const referenceLabel = isRiskScore ? '较大风险线' : 'P95 阈值';
+  const referenceLabel = isRiskScore ? '较大风险参考线' : '统计参考边界';
   return {
-    animationDuration: 520,
+    animationDuration: 240,
     grid: { left: 43, right: showEndLabel ? 34 : 14, top: 48, bottom: includeDataZoom ? 54 : 30, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
     legend: { top: 3, left: 0, right: 0, type: 'scroll', itemWidth: 16, itemHeight: 3, itemGap: 12, textStyle: { fontSize: 10 } },
     tooltip: {
@@ -135,7 +135,7 @@ function thresholdTrendOption(model, {
           const unit = param.data?.unit || '';
           lines.push(isRiskScore
             ? `${param.seriesName}  ${numberLabel(raw)} 分`
-            : `${param.seriesName}  ${numberLabel(raw)} ${unit}  /  ${numberLabel(param.value?.[1], 1)}% P95`);
+            : `${param.seriesName}  ${numberLabel(raw)} ${unit}\nP05 ${numberLabel(param.data?.p05)} · P95 ${numberLabel(param.data?.p95)} · ${param.data?.direction === 'low' ? '低侧接近' : '高侧偏离'} ${numberLabel(param.value?.[1], 1)}%`);
         });
         return lines.join('\n');
       },
@@ -143,7 +143,7 @@ function thresholdTrendOption(model, {
     xAxis: { type: 'time', boundaryGap: false, axisLabel: { formatter: (value) => timeLabel(value), hideOverlap: true, fontSize: 10 } },
     yAxis: {
       type: 'value',
-      name: isRiskScore ? '综合风险分' : 'P95 指数 (%)',
+      name: isRiskScore ? '综合风险分' : '参考偏离 (%)',
       nameTextStyle: { color: '#81949e', fontSize: 10, padding: [0, 0, 4, 0] },
       axisLabel: { formatter: isRiskScore ? '{value}' : '{value}%', fontSize: 10 },
       min: 0,
@@ -165,6 +165,10 @@ function thresholdTrendOption(model, {
         value: [point.timestamp, point.index],
         rawValue: point.rawValue,
         unit: point.unit,
+        p05: point.p05,
+        p95: point.p95,
+        direction: point.direction,
+        deviated: point.deviated,
         symbol: pointIndex === item.points.length - 1 ? 'circle' : 'none',
         symbolSize: pointIndex === item.points.length - 1 ? (index === 0 ? 9 : 6) : 0,
       })),
@@ -184,16 +188,13 @@ function thresholdTrendOption(model, {
             [{ yAxis: 40, itemStyle: { color: 'rgba(242,184,75,0.05)' } }, { yAxis: 70 }],
             [{ yAxis: 70, itemStyle: { color: 'rgba(240,91,91,0.07)' } }, { yAxis: 100 }],
           ]
-          : [
-            [{ yAxis: 0, itemStyle: { color: 'rgba(80,200,120,0.045)' } }, { yAxis: 80 }],
-            [{ yAxis: 80, itemStyle: { color: 'rgba(242,184,75,0.05)' } }, { yAxis: 100 }],
-            [{ yAxis: 100, itemStyle: { color: 'rgba(240,91,91,0.07)' } }, { yAxis: 'max' }],
-          ],
+          : [[
+            { yAxis: 0, itemStyle: { color: 'rgba(50,199,217,0.035)' } },
+            { yAxis: 100 },
+          ]],
       } : undefined,
     })),
-    dataZoom: includeDataZoom ? [
-      { type: 'inside', filterMode: 'none' },
-      {
+    dataZoom: includeDataZoom ? [{
         type: 'slider',
         filterMode: 'none',
         height: 15,
@@ -203,8 +204,7 @@ function thresholdTrendOption(model, {
         fillerColor: 'rgba(50,199,217,0.16)',
         handleStyle: { color: '#32c7d9', borderColor: '#32c7d9' },
         textStyle: { color: '#70838d', fontSize: 9 },
-      },
-    ] : undefined,
+      }] : undefined,
   };
 }
 
@@ -271,8 +271,8 @@ export function updateRoofRiskCharts({ current = {}, history = {}, events = {} }
   const trend = model.thresholdTrend;
   const title = document.getElementById('thresholdTrendTitle');
   const hint = document.getElementById('thresholdTrendHint');
-  if (title) title.textContent = trend.mode === 'risk-score' ? '真实历史 · 综合风险趋势' : '真实历史 · P95 阈值指数';
-  if (hint) hint.textContent = trend.mode === 'risk-score' ? '接口待升级，当前展示真实风险分' : '100% = P95 阈值 · 悬停查看原始值';
+  if (title) title.textContent = trend.mode === 'risk-score' ? '真实历史 · 综合风险分' : '真实历史 · 统计参考偏离趋势';
+  if (hint) hint.textContent = trend.mode === 'risk-score' ? '当前接口仅提供真实风险分历史' : '100% = P05/P95 统计参考边界 · 悬停查看原始值';
   const setSummary = (id, value) => { const element = document.getElementById(id); if (element) element.textContent = value; };
   setSummary('thresholdSampleCount', trend.sampleCount ? `${trend.sampleCount} 条` : '--');
   setSummary('thresholdExceededCount', trend.exceededCount == null ? '待升级' : `${trend.exceededCount} 项`);

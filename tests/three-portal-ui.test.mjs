@@ -85,3 +85,9 @@ test('enterprise core monitoring is a full-width section below the main scene', 
   assert.match(css, /body\.portal-enterprise \.core-monitoring-workbench[^}]*width:\s*calc\(100% - 16px\)/s);
   assert.match(css, /body\.portal-enterprise \.core-monitoring-workbench[^}]*display:\s*block/s);
 });
+
+test('enterprise uses statistical reference language instead of calling percentiles safety thresholds', () => {
+  assert.match(html, /统计参考偏离趋势/);
+  assert.match(html, /100% = P05\/P95 统计参考边界/);
+  assert.doesNotMatch(html, /P95 阈值|最高阈值指数|当前超 P95/);
+});

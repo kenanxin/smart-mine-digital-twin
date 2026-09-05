@@ -36,3 +36,13 @@ test('chart data updates are built from the RoofRisk chart model', () => {
   assert.match(charts, /updateReplayChart/);
   assert.match(charts, /dataZoom:/);
 });
+
+test('statistical reference trend is not presented as a safety or model threshold', () => {
+  assert.match(charts, /统计参考偏离趋势/);
+  assert.match(charts, /统计参考边界/);
+  assert.match(charts, /P05/);
+  assert.match(charts, /P95/);
+  assert.doesNotMatch(charts, /P95 阈值|P95 指数/);
+  assert.doesNotMatch(charts, /type:\s*['"]inside['"]/);
+  assert.doesNotMatch(charts, /animationDuration:\s*(?:[3-9]\d{2}|[1-9]\d{3,})/);
+});

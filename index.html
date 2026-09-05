@@ -240,21 +240,21 @@
     <div>
       <span class="replay-kicker"><i></i>企业端 · 下方监测工作区</span>
       <h2 id="coreMonitoringTitle">顶板灾变核心监测</h2>
-      <p>向下滚动查看真实历史指标、P95 阈值和当前多源监测值</p>
+      <p>向下滚动查看真实历史指标、统计参考范围和当前多源监测值</p>
     </div>
     <span class="core-monitoring-badge">真实数据 · P05 → P95</span>
   </div>
   <div class="card-body">
     <div class="threshold-overview" id="thresholdOverview" aria-live="polite">
       <div><span>连续样本</span><b id="thresholdSampleCount">--</b></div>
-      <div><span>当前超 P95</span><b id="thresholdExceededCount">--</b></div>
-      <div><span>最高阈值指数</span><b id="thresholdPeakIndex">--</b></div>
+      <div><span>统计偏离项</span><b id="thresholdExceededCount">--</b></div>
+      <div><span>峰值偏离位置</span><b id="thresholdPeakIndex">--</b></div>
     </div>
     <div class="section-heading compact-heading threshold-heading">
-      <span id="thresholdTrendTitle">真实历史 · P95 阈值指数</span>
-      <em id="thresholdTrendHint">100% = P95 阈值 · 悬停查看原始值</em>
+      <span id="thresholdTrendTitle">真实历史 · 统计参考偏离趋势</span>
+      <em id="thresholdTrendHint">100% = P05/P95 统计参考边界 · 悬停查看原始值</em>
     </div>
-    <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对 P95 的阈值趋势">
+    <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对各自 P05-P95 参考范围的偏离趋势">
       <span class="chart-loading-state">正在加载真实历史数据</span>
     </div>
     <div class="env-grid metric-rail" id="enterpriseMetricRail">
@@ -414,7 +414,7 @@
     <section class="portal-card wide">
       <div class="portal-card-head">
         <strong>多指标历史对比</strong>
-        <span>统一为 P95 阈值指数</span>
+        <span>统一为统计参考偏离位置</span>
       </div>
       <div class="role-chart expert-history-chart" id="expertHistoryChart" role="img" aria-label="真实历史指标阈值趋势"></div>
     </section>
@@ -503,7 +503,7 @@
       <div class="replay-metric-grid" id="replayMetricGrid"></div>
     </section>
     <section class="replay-pane replay-chart-pane">
-      <div class="replay-pane-head"><strong>真实连续趋势</strong><span>相对 P95 指数 · 支持缩放</span></div>
+      <div class="replay-pane-head"><strong>真实连续趋势</strong><span>统计参考偏离 · 支持拖动缩放</span></div>
       <div class="role-chart" id="replayTrendChart" role="img" aria-label="真实 CSV 多指标历史回放趋势"></div>
     </section>
     <section class="replay-pane replay-events-pane">
