@@ -1,221 +1,253 @@
-import { getMineState } from './mine-data.js';
+import { buildRoofRiskChartModel } from './roof-risk-chart-model.mjs';
 
-const chartInstances = {};
+const CHART_IDS = [
+  'thresholdTrendChart',
+  'regulatorDistributionChart',
+  'expertProbabilityChart',
+  'expertDeviationChart',
+];
 
-const darkTheme = {
-  textStyle: { color: '#93a5b1' },
-  backgroundColor: 'transparent',
-};
+const SERIES_COLORS = ['#32c7d9', '#f2b84b', '#50c878', '#d6e2e8', '#f05b5b', '#7fa4b8', '#a9c7d3'];
+const RISK_COLORS = { red: '#f05b5b', orange: '#ef8f4e', yellow: '#f2b84b', green: '#50c878' };
+const chartInstances = new Map();
+let resizeObserver = null;
+let themeRegistered = false;
 
-export function initEnvChart(domId) {
-  const dom = document.getElementById(domId);
-  if (!dom) return null;
-  const chart = echarts.init(dom);
-  chartInstances.env = chart;
-
-  const samples = Array.from({ length: 12 }, (_, index) => `${index * 2}s`);
-  chart.setOption({
-    ...darkTheme,
-    grid: { left: 34, right: 14, top: 34, bottom: 18 },
-    tooltip: { trigger: 'axis' },
-    xAxis: {
-      type: 'category',
-      data: samples,
-      axisLine: { lineStyle: { color: '#22303c' } },
+function registerTheme() {
+  if (themeRegistered || typeof echarts === 'undefined') return;
+  echarts.registerTheme('smartMineIndustrial', {
+    color: SERIES_COLORS,
+    backgroundColor: 'transparent',
+    textStyle: { color: '#a7b7c0', fontFamily: 'Segoe UI, Microsoft YaHei, sans-serif' },
+    title: { textStyle: { color: '#e8f1f5' } },
+    legend: { textStyle: { color: '#9db0ba' } },
+    categoryAxis: {
+      axisLine: { lineStyle: { color: '#34444d' } },
       axisTick: { show: false },
-      axisLabel: { color: '#5c6f7c', fontSize: 9, interval: 3 },
+      axisLabel: { color: '#81949e' },
+      splitLine: { show: false },
     },
-    yAxis: {
-      type: 'value',
-      name: 'MPa / mm',
-      splitLine: { lineStyle: { color: '#1a2530' } },
-      axisLabel: { color: '#5c6f7c', fontSize: 9 },
-      min: 0,
-      max: 30,
+    valueAxis: {
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#81949e' },
+      splitLine: { lineStyle: { color: '#26343b', type: 'dashed' } },
     },
-    legend: { top: 0, right: 0, textStyle: { color: '#93a5b1', fontSize: 9 } },
-    series: [
-      {
-        name: '顶板压力',
-        type: 'line',
-        data: [15.9, 16.2, 16.0, 16.4, 16.7, 16.5, 16.2, 16.1, 16.4, 16.6, 16.5, 16.4],
-        smooth: true,
-        symbol: 'none',
-        lineStyle: { color: '#ffb347', width: 2 },
-      },
-      {
-        name: '离层量',
-        type: 'line',
-        data: [11.8, 12.0, 12.3, 12.2, 12.5, 12.7, 12.6, 12.9, 12.7, 12.8, 12.9, 12.8],
-        smooth: true,
-        symbol: 'none',
-        lineStyle: { color: '#48c9b0', width: 1.8 },
-      },
-    ],
   });
+  themeRegistered = true;
+}
+
+function getResizeObserver() {
+  if (!resizeObserver && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver((entries) => {
+      entries.forEach(({ target, contentRect }) => {
+        if (!contentRect.width || !contentRect.height) return;
+        const chart = echarts.getInstanceByDom(target);
+        if (chart && !chart.isDisposed()) chart.resize();
+      });
+    });
+  }
+  return resizeObserver;
+}
+
+function initChart(domId) {
+  const dom = document.getElementById(domId);
+  if (!dom || !dom.clientWidth || !dom.clientHeight || typeof echarts === 'undefined') return null;
+  registerTheme();
+  let chart = echarts.getInstanceByDom(dom);
+  if (!chart) chart = echarts.init(dom, 'smartMineIndustrial', { renderer: 'canvas' });
+  chartInstances.set(domId, chart);
+  getResizeObserver()?.observe(dom);
   return chart;
 }
 
-export function initProdChart(domId) {
-  const dom = document.getElementById(domId);
-  if (!dom) return null;
-  const chart = echarts.init(dom);
-  chartInstances.prod = chart;
-
-  const labels = ['-12m', '-10m', '-8m', '-6m', '-4m', '-2m', '当前'];
-  chart.setOption({
-    ...darkTheme,
-    grid: { left: 34, right: 14, top: 34, bottom: 18 },
-    tooltip: { trigger: 'axis' },
-    legend: {
-      right: 4,
-      top: 2,
-      itemWidth: 18,
-      itemHeight: 8,
-      itemGap: 14,
-      textStyle: { color: '#93a5b1', fontSize: 10 },
-      data: ['风险分值', '关注线'],
-    },
-    xAxis: {
-      type: 'category',
-      data: labels,
-      axisLine: { lineStyle: { color: '#22303c' } },
-      axisTick: { show: false },
-      axisLabel: { color: '#5c6f7c', fontSize: 10 },
-    },
-    yAxis: {
-      type: 'value',
-      name: '分',
-      min: 0,
-      max: 100,
-      splitLine: { lineStyle: { color: '#1a2530' } },
-      axisLabel: { color: '#5c6f7c', fontSize: 9 },
-    },
-    series: [
-      {
-        name: '风险分值',
-        type: 'bar',
-        data: buildRiskTrend(getMineState().riskScore, 'normalMonitor'),
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#ffc95e' },
-            { offset: 1, color: '#7a5a10' },
-          ]),
-          borderRadius: [4, 4, 0, 0],
-        },
-        barWidth: 12,
-      },
-      {
-        name: '关注线',
-        type: 'line',
-        data: [50, 50, 50, 50, 50, 50, 50],
-        smooth: false,
-        symbol: 'none',
-        lineStyle: { color: '#ff9100', width: 1.5, type: 'dashed' },
-      },
-    ],
-  });
-  return chart;
+function chartFor(domId) {
+  const stored = chartInstances.get(domId);
+  if (stored && !stored.isDisposed()) return stored;
+  return initChart(domId);
 }
 
-function buildRiskTrend(score, stageId = 'normalMonitor') {
-  const current = Math.max(0, Math.min(100, Math.round(score)));
-  const profiles = {
-    normalMonitor: [-16, -13, -11, -8, -6, -3, 0],
-    roofPressureRise: [-24, -20, -17, -12, -8, -4, 0],
-    roofSeparationAlarm: [-38, -32, -25, -18, -11, -5, 0],
-    supportResistanceAlarm: [-42, -36, -28, -20, -13, -6, 0],
-    roofFallWarning: [-58, -48, -38, -26, -15, -7, 0],
-    emergencyResponse: [24, 18, 12, 7, 4, 2, 0],
+function timeLabel(value) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '--';
+  return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function numberLabel(value, maximumFractionDigits = 2) {
+  return Number.isFinite(Number(value))
+    ? new Intl.NumberFormat('zh-CN', { maximumFractionDigits }).format(Number(value))
+    : '--';
+}
+
+function baseTooltip(trigger = 'item') {
+  return {
+    trigger,
+    renderMode: 'richText',
+    confine: true,
+    backgroundColor: '#10191e',
+    borderColor: '#3b4c55',
+    borderWidth: 1,
+    textStyle: { color: '#e8f1f5', fontSize: 12 },
+    extraCssText: 'box-shadow:none;',
   };
-  const offsets = profiles[stageId] ?? profiles.normalMonitor;
-  return offsets.map(delta => Math.max(5, Math.min(100, current + delta)));
 }
 
-export function initAlertChart(domId) {
-  const dom = document.getElementById(domId);
-  if (!dom) return null;
-  const chart = echarts.init(dom);
-  chartInstances.alert = chart;
+function emptyGraphic(message) {
+  return [{
+    type: 'text',
+    left: 'center',
+    top: 'middle',
+    silent: true,
+    style: { text: message, fill: '#70838d', font: '12px Segoe UI, Microsoft YaHei, sans-serif' },
+  }];
+}
 
-  chart.setOption({
-    ...darkTheme,
-    grid: { left: 40, right: 16, top: 10, bottom: 18 },
-    tooltip: { trigger: 'axis' },
-    xAxis: {
-      type: 'category',
-      data: ['7/10', '7/11', '7/12', '7/13', '7/14', '7/15', '7/16'],
-      axisLine: { lineStyle: { color: '#22303c' } },
-      axisTick: { show: false },
-      axisLabel: { color: '#5c6f7c', fontSize: 9 },
+function thresholdTrendOption(model) {
+  const visibleSeries = model.thresholdTrend.series.slice(0, 4);
+  if (!visibleSeries.length) return { series: [], graphic: emptyGraphic('暂无连续历史数据') };
+  return {
+    animationDuration: 320,
+    grid: { left: 48, right: 18, top: 44, bottom: 32, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
+    legend: { top: 0, left: 0, type: 'scroll', itemWidth: 18, itemHeight: 3, itemGap: 14, textStyle: { fontSize: 10 } },
+    tooltip: {
+      ...baseTooltip('axis'),
+      axisPointer: { type: 'line', lineStyle: { color: '#607681', type: 'dashed' } },
+      formatter(params) {
+        if (!Array.isArray(params) || !params.length) return '';
+        const lines = [timeLabel(params[0].value?.[0])];
+        params.forEach((param) => {
+          const raw = param.data?.rawValue;
+          const unit = param.data?.unit || '';
+          lines.push(`${param.seriesName}  ${numberLabel(raw)} ${unit}  /  ${numberLabel(param.value?.[1], 1)}% P95`);
+        });
+        return lines.join('\n');
+      },
     },
+    xAxis: { type: 'time', boundaryGap: false, axisLabel: { formatter: (value) => timeLabel(value), hideOverlap: true, fontSize: 10 } },
     yAxis: {
       type: 'value',
-      name: '次',
-      splitLine: { lineStyle: { color: '#1a2530' } },
-      axisLabel: { color: '#5c6f7c', fontSize: 9 },
+      name: 'P95 阈值指数 (%)',
+      nameTextStyle: { color: '#81949e', fontSize: 10, padding: [0, 0, 4, 0] },
+      axisLabel: { formatter: '{value}%', fontSize: 10 },
+      min: (range) => Math.min(0, Math.floor(range.min / 25) * 25),
     },
-    series: [
-      {
-        name: '预警次数',
-        type: 'bar',
-        data: [3, 2, 1, 2, 1, 0, 1],
-        itemStyle: {
-          color: (params) => {
-            const colors = [
-              'rgba(242,194,62,0.75)',
-              'rgba(242,194,62,0.75)',
-              'rgba(74,157,224,0.7)',
-              'rgba(242,194,62,0.75)',
-              'rgba(74,157,224,0.7)',
-              'rgba(53,206,127,0.7)',
-              'rgba(74,157,224,0.7)',
-            ];
-            return colors[params.dataIndex] || colors[0];
-          },
-          borderRadius: [4, 4, 0, 0],
-        },
-        barWidth: 14,
-      },
-    ],
+    series: visibleSeries.map((item, index) => ({
+      id: item.key,
+      name: item.label,
+      type: 'line',
+      showSymbol: false,
+      smooth: 0.22,
+      sampling: 'lttb',
+      lineStyle: { width: index === 0 ? 2.2 : 1.5 },
+      emphasis: { focus: 'series' },
+      data: item.points.map((point) => ({ value: [point.timestamp, point.index], rawValue: point.rawValue, unit: point.unit })),
+      markLine: index === 0 ? {
+        silent: true,
+        symbol: 'none',
+        label: { formatter: 'P95 参考线', color: '#f2b84b', fontSize: 10 },
+        lineStyle: { color: '#f2b84b', width: 1, type: 'dashed' },
+        data: [{ yAxis: model.thresholdTrend.reference }],
+      } : undefined,
+    })),
+  };
+}
+
+function horizontalBarOption(source, { valueKey, valueMax, labelFormatter, tooltipFormatter, color }) {
+  if (!source.length) return { series: [], graphic: emptyGraphic('暂无真实数据') };
+  return {
+    animationDuration: 280,
+    dataset: { source },
+    grid: { left: 78, right: 42, top: 8, bottom: 12, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
+    tooltip: { ...baseTooltip('item'), formatter: tooltipFormatter },
+    xAxis: { type: 'value', max: valueMax, axisLabel: { show: false }, splitLine: { show: false } },
+    yAxis: { type: 'category', inverse: true, axisLabel: { fontSize: 11 }, axisLine: { show: false } },
+    series: [{
+      type: 'bar',
+      encode: { x: valueKey, y: 'label' },
+      barWidth: 10,
+      showBackground: true,
+      backgroundStyle: { color: '#202c32', borderRadius: 2 },
+      itemStyle: { color, borderRadius: 2 },
+      label: { show: true, position: 'right', color: '#d6e2e8', fontSize: 11, formatter: labelFormatter },
+    }],
+  };
+}
+
+function distributionOption(model) {
+  return horizontalBarOption(model.distribution, {
+    valueKey: 'count',
+    valueMax: (value) => Math.max(1, Math.ceil(value.max * 1.3)),
+    color: (params) => RISK_COLORS[params.data.key] || '#7fa4b8',
+    labelFormatter: (params) => `${params.value.count} 条 · ${numberLabel(params.value.percent, 1)}%`,
+    tooltipFormatter: (params) => `${params.value.label}\n${params.value.count} 条事件 · ${numberLabel(params.value.percent, 1)}%`,
   });
-  return chart;
+}
+
+function probabilityOption(model) {
+  return horizontalBarOption(model.probabilities, {
+    valueKey: 'percent',
+    valueMax: 100,
+    color: (params) => RISK_COLORS[params.data.key === 'severe' ? 'red' : params.data.key === 'major' ? 'orange' : params.data.key === 'general' ? 'yellow' : 'green'],
+    labelFormatter: (params) => `${numberLabel(params.value.percent, 3)}%`,
+    tooltipFormatter: (params) => `${params.value.label}\n模型概率 ${numberLabel(params.value.percent, 3)}%`,
+  });
+}
+
+function deviationOption(model) {
+  if (!model.deviations.length) return { series: [], graphic: emptyGraphic('暂无标准化特征证据') };
+  const source = model.deviations.map((item) => ({ ...item, magnitude: Math.abs(item.deviation) }));
+  return horizontalBarOption(source, {
+    valueKey: 'magnitude',
+    valueMax: (value) => Math.max(1, Math.ceil(value.max * 1.25)),
+    color: (params) => Math.abs(params.data.deviation) >= 2 ? '#f05b5b' : '#32c7d9',
+    labelFormatter: (params) => `${params.value.deviation >= 0 ? '+' : ''}${numberLabel(params.value.deviation, 2)}σ`,
+    tooltipFormatter: (params) => `${params.value.label}\n标准化偏离 ${params.value.deviation >= 0 ? '+' : ''}${numberLabel(params.value.deviation, 2)}σ\n原始值 ${numberLabel(params.value.rawValue)} ${params.value.unit || ''}`,
+  });
+}
+
+export function initPortalCharts() {
+  CHART_IDS.forEach(initChart);
+  return chartInstances;
+}
+
+export function updateRoofRiskCharts({ current = {}, history = {}, events = {} } = {}) {
+  const model = buildRoofRiskChartModel(current, history, events);
+  const options = {
+    thresholdTrendChart: thresholdTrendOption(model),
+    regulatorDistributionChart: distributionOption(model),
+    expertProbabilityChart: probabilityOption(model),
+    expertDeviationChart: deviationOption(model),
+  };
+
+  Object.entries(options).forEach(([domId, option]) => {
+    const chart = chartFor(domId);
+    if (!chart) return;
+    const currentSeries = chart.getOption()?.series?.length || 0;
+    const nextSeries = option.series?.length || 0;
+    chart.setOption(option, { notMerge: currentSeries !== nextSeries });
+  });
+  return model;
+}
+
+export function clearRoofRiskCharts(message = '真实数据暂不可用') {
+  CHART_IDS.forEach((domId) => {
+    const chart = chartFor(domId);
+    if (chart) chart.setOption({ series: [], dataset: { source: [] }, graphic: emptyGraphic(message) }, { notMerge: true });
+  });
 }
 
 export function resizeCharts() {
-  Object.values(chartInstances).forEach(chart => {
-    if (chart && !chart.isDisposed()) chart.resize();
+  chartInstances.forEach((chart) => {
+    const dom = chart.getDom();
+    if (!chart.isDisposed() && dom.clientWidth && dom.clientHeight) chart.resize();
   });
-}
-
-export function updateCharts(options = {}) {
-  const state = getMineState();
-  const envChart = chartInstances.env;
-  if (envChart && !envChart.isDisposed()) {
-    const history = state.history;
-    envChart.setOption({
-      xAxis: { data: history.map(item => `${Math.round(item.elapsed)}s`) },
-      series: [
-        { data: history.map(item => Number(item.roofPressure.toFixed(2))) },
-        { data: history.map(item => Number(item.separation.toFixed(2))) },
-      ],
-    });
-  }
-  const riskChart = chartInstances.prod;
-  if (riskChart && !riskChart.isDisposed()) {
-    const score = Number.isFinite(options.riskScore) ? options.riskScore : state.riskScore;
-    const stageId = options.stageId ?? 'normalMonitor';
-    riskChart.setOption({
-      series: [
-        { data: buildRiskTrend(score, stageId) },
-        { data: [50, 50, 50, 50, 50, 50, 50] },
-      ],
-    });
-  }
 }
 
 export function disposeCharts() {
-  Object.values(chartInstances).forEach(chart => {
-    if (chart && !chart.isDisposed()) chart.dispose();
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+  chartInstances.forEach((chart) => {
+    if (!chart.isDisposed()) chart.dispose();
   });
+  chartInstances.clear();
 }
