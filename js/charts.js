@@ -5,6 +5,7 @@ const CHART_IDS = [
   'regulatorDistributionChart',
   'expertProbabilityChart',
   'expertDeviationChart',
+  'expertHistoryChart',
 ];
 
 const SERIES_COLORS = ['#32c7d9', '#f2b84b', '#50c878', '#d6e2e8', '#f05b5b', '#7fa4b8', '#a9c7d3'];
@@ -217,6 +218,7 @@ export function updateRoofRiskCharts({ current = {}, history = {}, events = {} }
     regulatorDistributionChart: distributionOption(model),
     expertProbabilityChart: probabilityOption(model),
     expertDeviationChart: deviationOption(model),
+    expertHistoryChart: thresholdTrendOption(model),
   };
 
   Object.entries(options).forEach(([domId, option]) => {

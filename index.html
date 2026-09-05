@@ -43,7 +43,7 @@
 </div>
 
 <!-- ============ 主体布局 ============ -->
-<div class="main-container">
+<div class="main-container enterprise-screen" id="enterprisePortal">
 
   <!-- 左侧面板 -->
   <aside class="panel panel-left">
@@ -85,7 +85,7 @@
         <span class="card-title">顶板灾变核心监测</span>
       </div>
       <div class="card-body">
-        <div class="env-grid">
+        <div class="env-grid metric-rail" id="enterpriseMetricRail">
           <div class="env-item" data-metric-slot="0">
             <span class="env-label">顶板离层速率</span>
             <span class="env-value safe">--</span>
@@ -116,9 +116,19 @@
             <span class="env-value safe">--</span>
             <span class="env-bar"><i style="width:0"></i></span>
           </div>
+          <div class="env-item metric-wide" data-metric-slot="6">
+            <span class="env-label">距水体/岩溶体距离</span>
+            <span class="env-value safe">--</span>
+            <span class="env-reference">P05-P95 参考范围</span>
+            <span class="env-bar"><i style="width:0"></i></span>
+          </div>
         </div>
         <div class="simulation-note" id="simulationNote">正在读取老师提供的真实监测数据</div>
-        <div class="env-chart-wrap" id="envChart"></div>
+        <div class="section-heading compact-heading">
+          <span>真实历史 · P95 阈值指数</span>
+          <em>悬停查看原始值与单位</em>
+        </div>
+        <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对 P95 的阈值趋势"></div>
       </div>
     </section>
   </aside>
@@ -189,7 +199,6 @@
         <span class="card-title">顶板风险态势</span>
       </div>
       <div class="card-body">
-        <div class="prod-chart-wrap" id="prodChart"></div>
         <div class="prod-stats">
           <div class="prod-stat">
             <div class="prod-num danger" id="riskScore">92</div>
@@ -215,7 +224,6 @@
         <span class="card-badge safe">无重大风险</span>
       </div>
       <div class="card-body">
-        <div class="alert-chart-wrap" id="alertChart"></div>
         <div class="alert-list" id="alertList"></div>
       </div>
     </section>
@@ -271,13 +279,21 @@
   </aside>
 </div>
 
+<section class="provenance-strip" id="enterpriseProvenance" aria-label="当前真实数据来源">
+  <div><span>数据源</span><b id="enterpriseSourceName">读取中</b></div>
+  <div><span>记录</span><b id="enterpriseRecordId">--</b></div>
+  <div><span>原始时间</span><b id="enterpriseRecordTime">--</b></div>
+  <div><span>设备</span><b id="enterpriseDeviceId">--</b></div>
+  <div><span>SHA-256</span><b id="enterpriseSourceHash">--</b></div>
+</section>
+
 <!-- ============ 监管端门户 ============ -->
 <section class="portal-screen regulator-screen" id="regulatorPortal">
-  <div class="portal-hero regulator">
+  <div class="portal-hero regulator role-heading">
     <div>
       <span class="portal-kicker">监管端 · 区域安全态势</span>
       <h2>顶板灾变风险远程监管驾驶舱</h2>
-      <p>面向监管部门汇聚老师真实监测数据中的四级代表事件、预警闭环和处置进度。</p>
+      <p>真实事件优先级、证据与闭环进度</p>
     </div>
     <div class="portal-score danger">
       <b id="regulatorPriorityCount">--</b>
@@ -286,13 +302,16 @@
   </div>
 
   <div class="portal-grid regulator-grid">
-    <section class="portal-card wide">
+    <section class="portal-card wide regulator-overview-card">
       <div class="portal-card-head">
         <strong>真实风险样本总览</strong>
         <span id="regulatorOverviewCount">读取中</span>
       </div>
-      <div class="mine-risk-list" id="regulatorMineRiskList">
-        <p class="data-empty-state">正在读取真实风险事件</p>
+      <div class="regulator-overview-layout">
+        <div class="role-chart compact-chart" id="regulatorDistributionChart" role="img" aria-label="真实事件风险等级分布"></div>
+        <div class="mine-risk-list" id="regulatorMineRiskList">
+          <p class="data-empty-state">正在读取真实风险事件</p>
+        </div>
       </div>
     </section>
 
@@ -334,6 +353,11 @@
       <div class="supervision-list" id="regulatorSupervisionList">
         <p class="data-empty-state">正在读取真实处置状态</p>
       </div>
+      <div class="event-evidence" id="regulatorEvidence">
+        <p><span>真实记录</span><b>--</b></p>
+        <p><span>原始时间</span><b>--</b></p>
+        <p><span>模型置信度</span><b>--</b></p>
+      </div>
       <div class="closed-loop-actions portal-actions">
         <button class="loop-action-btn primary" data-loop-action="advance">监管复核通过</button>
         <button class="loop-action-btn" data-loop-action="archive">直接闭环归档</button>
@@ -364,11 +388,11 @@
 
 <!-- ============ 智库端门户 ============ -->
 <section class="portal-screen expert-screen" id="expertPortal">
-  <div class="portal-hero expert">
+  <div class="portal-hero expert role-heading">
     <div>
       <span class="portal-kicker">智库端 · 模型研判</span>
       <h2>顶板灾变智能预警模型解释平台</h2>
-      <p>面向专家组和算法团队展示真实监测输入、四级概率、特征证据和判别依据。</p>
+      <p>预测标签、真实标签、概率与标准化偏离</p>
     </div>
     <div class="portal-score" id="expertAuditCard">
       <b id="expertConfidence">--</b>
@@ -393,12 +417,23 @@
         <strong>模型输出概率</strong>
         <span id="expertModelStatus">XGBoost</span>
       </div>
-      <div class="weight-stack probability-stack" id="expertProbabilityList">
-        <div style="--w:0%"><span>低风险</span><b>--</b></div>
-        <div style="--w:0%"><span>一般风险</span><b>--</b></div>
-        <div style="--w:0%"><span>较大风险</span><b>--</b></div>
-        <div style="--w:0%"><span>重大风险</span><b>--</b></div>
+      <div class="role-chart compact-chart" id="expertProbabilityChart" role="img" aria-label="XGBoost 四级风险概率"></div>
+    </section>
+
+    <section class="portal-card">
+      <div class="portal-card-head">
+        <strong>标准化偏离</strong>
+        <span>绝对值越大偏离越明显</span>
       </div>
+      <div class="role-chart compact-chart" id="expertDeviationChart" role="img" aria-label="当前记录标准化特征偏离"></div>
+    </section>
+
+    <section class="portal-card wide">
+      <div class="portal-card-head">
+        <strong>多指标历史对比</strong>
+        <span>统一为 P95 阈值指数</span>
+      </div>
+      <div class="role-chart expert-history-chart" id="expertHistoryChart" role="img" aria-label="真实历史指标阈值趋势"></div>
     </section>
 
     <section class="portal-card wide">

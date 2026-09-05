@@ -83,6 +83,8 @@ export function mapRoofRiskViewModel(payload) {
       text: formatMetricValue(metric.value, metric.unit ?? item.unit ?? null),
       status: statusClass(metric.status),
       percent: metricPercent(Number(metric.value), schemaByKey.get(item.key)),
+      p05: Number.isFinite(Number(item.p05)) ? Number(item.p05) : null,
+      p95: Number.isFinite(Number(item.p95)) ? Number(item.p95) : null,
     };
   });
 

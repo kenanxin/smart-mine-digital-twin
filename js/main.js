@@ -4,7 +4,7 @@
    ============================================================ */
 
 import { initScene, switchToOverview, switchToSurface, switchToUnderground, focusMineEquipment, focusRoofWarningStage, setRoofFieldMode, disasterEffects } from './scene.js';
-import { initEnvChart, initProdChart, initAlertChart, resizeCharts, updateCharts } from './charts.js';
+import { clearRoofRiskCharts, disposeCharts, initPortalCharts, resizeCharts, updateRoofRiskCharts } from './charts.js';
 import { init, startDisaster, resetDisaster, getEquipFaults, getEnvData, isActive, getState, tick, getDisasterList } from './disaster.js';
 import { EQUIPMENT, METRICS, getMetricLevel, getMineState, updateMineState } from './mine-data.js';
 import { mapRoofRiskViewModel, unavailableRoofRiskViewModel } from './roof-risk-view-model.mjs';
@@ -147,13 +147,6 @@ function setupEquipmentFocus() {
 }
 
 // ==================== 安全预警 ====================
-const baseAlerts = [
-  { time: '14:22', msg: 'RP-03 \u9876\u677f\u538b\u529b\u6ce2\u52a8\u5904\u4e8e\u6a21\u62df\u6b63\u5e38\u533a\u95f4', level: 'low' },
-  { time: '12:45', msg: 'SR-02 \u652f\u67b6\u5de5\u4f5c\u963b\u529b\u91c7\u96c6\u94fe\u8def\u6b63\u5e38', level: 'low' },
-  { time: '10:30', msg: 'DS-02 \u79bb\u5c42\u76d1\u6d4b\u70b9\u5b8c\u6210\u96f6\u70b9\u6821\u6838', level: 'low' },
-  { time: '08:12', msg: '12 \u4e2a\u76d1\u6d4b\u70b9\u6570\u636e\u5b8c\u6574\u7387 100%', level: 'low' },
-];
-
 const DECISION_GUIDE = {
   normalMonitor: { badge: '\u5de1\u68c0', level: 'safe', stage: '\u6b63\u5e38\u76d1\u6d4b', basis: '\u9876\u677f\u538b\u529b\u3001\u79bb\u5c42\u91cf\u3001\u652f\u67b6\u5de5\u4f5c\u963b\u529b\u5747\u5904\u4e8e\u7a33\u5b9a\u533a\u95f4\u3002', decision: '\u4fdd\u6301\u81ea\u52a8\u5de1\u68c0\uff0c\u91cd\u70b9\u89c2\u5bdf\u8fd0\u8f93\u987a\u69fd 4m\u300110m\u300116m \u76d1\u6d4b\u70b9\u8d8b\u52bf\u3002', actions: ['\u6301\u7eed\u91c7\u96c6', '\u4fdd\u6301\u901a\u98ce', '\u6b63\u5e38\u63a8\u8fdb'] },
   roofPressureRise: { badge: '\u5173\u6ce8', level: 'warn', stage: '\u538b\u529b\u5347\u9ad8', basis: '\u9876\u677f\u538b\u529b\u63a5\u8fd1\u5173\u6ce8\u9608\u503c\uff0c\u652f\u67b6\u963b\u529b\u540c\u6b65\u62ac\u5347\u3002', decision: '\u964d\u4f4e\u91c7\u7164\u673a\u63a8\u8fdb\u901f\u5ea6\uff0c\u590d\u6838\u6db2\u538b\u652f\u67b6\u521d\u6491\u529b\u3002', actions: ['\u964d\u901f\u63a8\u8fdb', '\u590d\u6838\u652f\u67b6', '\u52a0\u5f3a\u5de1\u68c0'] },
@@ -168,7 +161,15 @@ function renderAlertList() {
   if (!container) return;
 
   const st = getState();
-  let alerts = [...baseAlerts];
+  const risk = latestRoofRiskApiPayload?.risk;
+  const sourceTime = latestRoofRiskApiPayload?.provenance?.original_timestamp || latestRoofRiskApiPayload?.timestamp || '';
+  const time = sourceTime.split(' ').at(-1) || '--';
+  const apiLevel = risk?.level === 'red' || risk?.level === 'orange' ? 'mid' : risk?.level === 'yellow' ? 'warn' : 'low';
+  let alerts = latestRoofRiskApiPayload ? [
+    { time, msg: `${latestRoofRiskApiPayload.event_id || '--'} · ${risk?.stage || '正常监测'}`, level: apiLevel },
+    { time: '', msg: risk?.explanation || '真实记录已进入持续监测。', level: apiLevel },
+    { time: '', msg: `记录 ${latestRoofRiskApiPayload.provenance?.record_id || '--'} · 设备 ${latestRoofRiskApiPayload.provenance?.device_id || '--'}`, level: 'low' },
+  ] : [];
 
   // 如果灾害活跃，在前面插入灾害告警
   if (st.active && st.alert) {
@@ -186,7 +187,7 @@ function renderAlertList() {
       <span class="alert-msg">${a.msg}</span>
       <span class="alert-lvl ${a.level}">${a.level === 'mid' ? '注意' : a.level === 'warn' ? '警告' : '正常'}</span>
     </div>
-  `).join('');
+  `).join('') || '<p class="data-empty-state">真实预警数据暂不可用</p>';
 
   // 更新卡片badge
   const badge = document.querySelector('.card-badge');
@@ -249,7 +250,7 @@ function renderDecisionPanel(values, riskScore) {
 
 function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
   const slots = document.querySelectorAll('[data-metric-slot]');
-  const defaultLabels = ['顶板离层速率', '锚杆轴力增量', '锚索轴力增量', '支架阻力', '涌水量', '微震能量'];
+  const defaultLabels = ['顶板离层速率', '锚杆轴力增量', '锚索轴力增量', '支架阻力', '涌水量', '微震能量', '距水体/岩溶体距离'];
   if (!slots.length) return;
   if (demoValues) {
     DEMO_METRIC_KEYS.forEach((key, index) => {
@@ -266,11 +267,24 @@ function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
         ? Math.max(0, Math.min(100, (value - metric.normal[0]) / (metric.danger - metric.normal[0]) * 100))
         : 0;
       slot.querySelector('.env-bar i').style.width = `${ratio}%`;
+      let reference = slot.querySelector('.env-reference');
+      if (!reference) {
+        reference = document.createElement('span');
+        reference.className = 'env-reference';
+        slot.querySelector('.env-bar').before(reference);
+      }
+      reference.textContent = '灾变过程演示值';
     });
+    const uncovered = slots[6];
+    if (uncovered) {
+      uncovered.querySelector('.env-value').textContent = '--';
+      uncovered.querySelector('.env-bar i').style.width = '0%';
+      uncovered.querySelector('.env-reference').textContent = '当前演示不改变真实记录';
+    }
     return;
   }
 
-  const metrics = viewModel.available ? viewModel.metrics.slice(0, 6) : [];
+  const metrics = viewModel.available ? viewModel.metrics.filter(metric => metric.key !== 'data_quality').slice(0, 7) : [];
   slots.forEach((slot, index) => {
     const metric = metrics[index];
     slot.querySelector('.env-label').textContent = metric?.label || defaultLabels[index];
@@ -278,12 +292,20 @@ function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
     valueElement.textContent = metric?.text || '--';
     valueElement.className = `env-value ${metric?.status || 'safe'}`;
     slot.querySelector('.env-bar i').style.width = `${metric?.percent ?? 0}%`;
+    let reference = slot.querySelector('.env-reference');
+    if (!reference) {
+      reference = document.createElement('span');
+      reference.className = 'env-reference';
+      slot.querySelector('.env-bar').before(reference);
+    }
+    reference.textContent = Number.isFinite(metric?.p05) && Number.isFinite(metric?.p95)
+      ? `P05 ${metric.p05} · P95 ${metric.p95} ${metric.unit || ''}`
+      : '参考范围不可用';
   });
 }
 
 function renderExpertModel(viewModel) {
   const factorList = document.getElementById('expertFactorList');
-  const probabilityList = document.getElementById('expertProbabilityList');
   const auditState = document.getElementById('expertAuditState');
   setText('expertConfidence', viewModel.model.confidenceText);
   setText('expertInputStatus', viewModel.available ? '8 项真实输入' : viewModel.message);
@@ -296,11 +318,6 @@ function renderExpertModel(viewModel) {
     factorList.innerHTML = viewModel.available
       ? viewModel.metrics.map(metric => `<p><span>${metric.label}</span><b>${metric.text}</b><i style="width:${metric.percent ?? 0}%"></i></p>`).join('')
       : `<p class="data-empty-state">${viewModel.message}</p>`;
-  }
-  if (probabilityList) {
-    probabilityList.innerHTML = viewModel.available
-      ? viewModel.model.probabilities.map(item => `<div class="probability-${item.key}" style="--w:${item.percent}%"><span>${item.label}</span><b>${item.text}</b></div>`).join('')
-      : '<p class="data-empty-state">真实模型输出暂不可用</p>';
   }
   setText('apiRecordId', viewModel.provenance.recordId);
   setText('apiRecordTime', viewModel.provenance.timestamp);
@@ -494,8 +511,6 @@ function refreshData() {
   } else {
     renderUnavailableRiskPanels();
   }
-  const chartStageId = isActive() ? (activeStageId ?? 'normalMonitor') : stageIdFromApiRisk(latestRoofRiskApiPayload?.risk);
-  updateCharts({ riskScore: roofRiskScore, stageId: chartStageId });
   const v2SensorCount = window.__mineDiagnostics?.validation?.counts?.roofSensors;
   const monitorCount = Number.isFinite(v2SensorCount) ? v2SensorCount : mine.monitorPoints.length;
   const completeness = Number.isFinite(v2SensorCount)
@@ -896,6 +911,8 @@ function refreshRegulatorEventDetail(event) {
     setText('regulatorAdviceStatus', '真实数据接口暂不可用');
     const unavailableList = document.getElementById('regulatorSupervisionList');
     if (unavailableList) unavailableList.innerHTML = '<p class="data-empty-state">无法读取真实事件与处置状态</p>';
+    const unavailableEvidence = document.getElementById('regulatorEvidence');
+    if (unavailableEvidence) unavailableEvidence.innerHTML = '<p class="data-empty-state">事件证据暂不可用</p>';
     return;
   }
   setText('regulatorAdviceStatus', `${event.stage || formatRiskLevel(event.risk_level)} · ${statusText(event.status)}`);
@@ -905,6 +922,14 @@ function refreshRegulatorEventDetail(event) {
       <p><b>督办要求</b><span>${event.supervision || '按预警等级执行监管复核。'}</span></p>
       <p><b>企业反馈</b><span>${event.feedback || '等待企业端上传反馈。'}</span></p>
       <p><b>专家意见</b><span>${event.expert_summary || '等待智库端输出模型解释。'}</span></p>
+    `;
+  }
+  const evidence = document.getElementById('regulatorEvidence');
+  if (evidence) {
+    evidence.innerHTML = `
+      <p><span>真实记录</span><b>${event.record_id || '--'}</b></p>
+      <p><span>原始时间</span><b>${event.created_at || '--'}</b></p>
+      <p><span>模型置信度</span><b>${Number.isFinite(Number(event.confidence)) ? `${(Number(event.confidence) * 100).toFixed(2)}%` : '--'}</b></p>
     `;
   }
 }
@@ -950,15 +975,18 @@ function renderRegulatorTimeline(loop = {}) {
   `).join('');
 }
 
-async function refreshRegulatorEvents() {
+async function refreshRegulatorEvents(payload = null) {
   const queue = document.getElementById('regulatorEventQueue');
   if (!queue) return;
   try {
-    const response = await authFetch('/api/roof-risk/events', { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();
-    if (payload.selected_event_id) selectedRegulatorEventId = payload.selected_event_id;
-    const events = enrichRegulatorEvents(Array.isArray(payload.events) ? payload.events : []);
+    let eventPayload = payload;
+    if (!eventPayload) {
+      const response = await authFetch('/api/roof-risk/events', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      eventPayload = await response.json();
+    }
+    if (eventPayload.selected_event_id) selectedRegulatorEventId = eventPayload.selected_event_id;
+    const events = enrichRegulatorEvents(Array.isArray(eventPayload.events) ? eventPayload.events : []);
     renderRegulatorRiskOverview(events);
     renderRegulatorEventQueue(events);
   } catch (error) {
@@ -1021,7 +1049,7 @@ function refreshClosedLoop(payload) {
     const triggerText = Array.isArray(payload.risk?.trigger) ? payload.risk.trigger.map(formatTriggerName).join('、') : '多源指标';
     const evidenceItems = Array.isArray(payload.feature_evidence) ? payload.feature_evidence : [];
     const evidenceText = evidenceItems.length
-      ? evidenceItems.map(item => `${item.label} ${Math.round((item.contribution ?? 0) * 100)}%`).join('，')
+      ? evidenceItems.map(item => `${item.label} ${Number(item.standardized_value) >= 0 ? '+' : ''}${Number(item.standardized_value).toFixed(2)}σ`).join('，')
       : '--';
     const stepText = steps.map(step => step.label).join(' → ');
     evidence.innerHTML = `
@@ -1056,19 +1084,35 @@ async function refreshRoofRiskApiStatus() {
   const statusText = document.getElementById('apiStatusText');
   if (!statusText) return;
   try {
-    const response = await authFetch('/api/roof-risk/current', { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();
+    const [currentResponse, historyResponse, eventsResponse] = await Promise.all([
+      authFetch('/api/roof-risk/current', { cache: 'no-store' }),
+      authFetch('/api/roof-risk/history', { cache: 'no-store' }),
+      authFetch('/api/roof-risk/events', { cache: 'no-store' }),
+    ]);
+    if (!currentResponse.ok || !historyResponse.ok || !eventsResponse.ok) {
+      throw new Error(`HTTP ${currentResponse.status}/${historyResponse.status}/${eventsResponse.status}`);
+    }
+    const [payload, historyPayload, eventsPayload] = await Promise.all([
+      currentResponse.json(), historyResponse.json(), eventsResponse.json(),
+    ]);
     latestRoofRiskApiPayload = payload;
     setText('apiVersion', payload.api_version ?? 'RoofRisk API v1');
     setText('apiDataSource', normalizeDataSourceLabel(payload.data_source));
     setText('apiEventId', payload.event_id ?? '--');
     setText('apiFaceId', payload.face_id ?? '--');
-    renderExpertModel(mapRoofRiskViewModel(payload));
+    const viewModel = mapRoofRiskViewModel(payload);
+    setText('enterpriseSourceName', payload.provenance?.source_name || 'teacher_roof_monitoring.csv');
+    setText('enterpriseRecordId', viewModel.provenance.recordId);
+    setText('enterpriseRecordTime', viewModel.provenance.timestamp);
+    setText('enterpriseDeviceId', viewModel.provenance.deviceId);
+    setText('enterpriseSourceHash', viewModel.provenance.hashShort);
+    renderExpertModel(viewModel);
     refreshClosedLoop(payload);
+    initPortalCharts();
+    updateRoofRiskCharts({ current: payload, history: historyPayload, events: eventsPayload });
     statusText.textContent = '接口在线';
     statusText.classList.remove('api-offline');
-    await refreshRegulatorEvents();
+    await refreshRegulatorEvents(eventsPayload);
   } catch (error) {
     latestRoofRiskApiPayload = null;
     const unavailable = unavailableRoofRiskViewModel();
@@ -1077,6 +1121,12 @@ async function refreshRoofRiskApiStatus() {
     setText('apiDataSource', unavailable.provenance.source);
     setText('apiEventId', '--');
     setText('apiFaceId', '--');
+    setText('enterpriseSourceName', '真实数据接口暂不可用');
+    setText('enterpriseRecordId', '--');
+    setText('enterpriseRecordTime', '--');
+    setText('enterpriseDeviceId', '--');
+    setText('enterpriseSourceHash', '--');
+    clearRoofRiskCharts('真实数据接口暂不可用');
     statusText.textContent = '接口离线';
     statusText.classList.add('api-offline');
     console.warn('RoofRisk API status unavailable:', error);
@@ -1133,13 +1183,11 @@ async function initApp(authenticatedUser) {
   // 初始化灾害模块（注入场景特效）
   init(disasterEffects);
 
-  // 初始化3D场景
-  initScene('threeContainer');
+  // 仅企业值守端需要三维场景；监管和智库端避免后台加载大型模型。
+  if (authenticatedUser.role === 'enterprise') initScene('threeContainer');
 
-  // 初始化图表
-  initEnvChart('envChart');
-  initProdChart('prodChart');
-  initAlertChart('alertChart');
+  // 图表在角色门户可见且真实 API 数据就绪后初始化。
+  initPortalCharts();
 
   // UI 组件
   setupViewToggle();
@@ -1163,6 +1211,7 @@ async function initApp(authenticatedUser) {
   gameLoop();
 
   window.addEventListener('resize', onResize);
+  window.addEventListener('beforeunload', disposeCharts, { once: true });
 
   console.log('✅ 平台启动完成！');
 }
