@@ -2328,8 +2328,12 @@ body.portal-enterprise .main-container {
 body.portal-enterprise .replay-workbench {
   position: relative;
   z-index: 2;
+  flex: 0 0 auto;
+  clear: both;
+  width: calc(100% - 16px);
+  align-self: stretch;
   display: block;
-  margin: 8px;
+  margin: 16px 8px 8px;
   border: 1px solid #2a3941;
   border-top: 2px solid var(--telemetry-cyan);
   border-radius: 5px;

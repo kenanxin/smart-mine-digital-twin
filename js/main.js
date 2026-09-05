@@ -20,7 +20,6 @@ let latestRoofRiskApiPayload = null;
 let latestRoofRiskEventsPayload = {};
 let replayController = null;
 let replayMeta = null;
-let lastReplayStageId = null;
 
 const DEMO_METRIC_KEYS = ['roofPressure', 'separation', 'subsidence', 'supportResistance', 'anchorLoad', 'microseismicEnergy'];
 
@@ -432,10 +431,6 @@ function applyReplayFrame(frame) {
   updateReplayChart({ current: payload, history: frame.history });
   updateRoofRiskCharts({ current: payload, history: frame.history, events: latestRoofRiskEventsPayload });
 
-  const stageId = stageIdFromApiRisk(payload.risk);
-  if (stageId !== lastReplayStageId) {
-    if (focusRoofWarningStage(stageId)) lastReplayStageId = stageId;
-  }
 }
 
 async function loadReplayFrame(index) {

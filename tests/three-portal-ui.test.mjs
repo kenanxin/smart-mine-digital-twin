@@ -71,3 +71,9 @@ test('replay summary risk color follows the active real record level', () => {
   assert.match(css, /data-risk-level="orange"/);
   assert.match(css, /data-risk-level="red"/);
 });
+
+test('replay frame updates do not refocus the Three.js camera', () => {
+  assert.doesNotMatch(main, /const stageId = stageIdFromApiRisk\(payload\.risk\)/);
+  assert.match(css, /body\.portal-enterprise \.replay-workbench[^}]*clear:\s*both/s);
+  assert.match(css, /body\.portal-enterprise \.replay-workbench[^}]*width:\s*calc\(100% - 16px\)/s);
+});
