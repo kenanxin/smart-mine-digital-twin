@@ -54,6 +54,7 @@ test('enterprise portal exposes an explicit real-history replay workbench', () =
   assert.match(html, /真实监测数据历史回放/);
   assert.doesNotMatch(html, /实时数据回放/);
   assert.match(css, /body\.portal-enterprise[^}]*overflow-y:\s*auto/s);
+  assert.match(css, /body\.portal-enterprise[^}]*height:\s*100%/s);
   assert.match(css, /\.replay-analysis[^}]*grid-template-columns:/s);
   assert.match(css, /#replayTrendChart[^}]*height:\s*320px/s);
 });
