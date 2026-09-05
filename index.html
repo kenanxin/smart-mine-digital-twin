@@ -6,7 +6,7 @@
 <title>智慧矿山数字孪生综合管控平台</title>
 <link rel="stylesheet" href="css/style.css">
 <!-- ECharts -->
-<script src="https://cdn.jsdelivr.net/npm/echarts@6.1.0/dist/echarts.min.js"></script>
+<script src="./js/vendor/echarts.min.js"></script>
 </head>
 <body>
 
@@ -85,6 +85,18 @@
         <span class="card-title">顶板灾变核心监测</span>
       </div>
       <div class="card-body">
+        <div class="threshold-overview" id="thresholdOverview" aria-live="polite">
+          <div><span>连续样本</span><b id="thresholdSampleCount">--</b></div>
+          <div><span>超 P95 指标</span><b id="thresholdExceededCount">--</b></div>
+          <div><span>最高阈值指数</span><b id="thresholdPeakIndex">--</b></div>
+        </div>
+        <div class="section-heading compact-heading threshold-heading">
+          <span id="thresholdTrendTitle">真实历史 · P95 阈值指数</span>
+          <em id="thresholdTrendHint">100% = P95 阈值 · 悬停查看原始值</em>
+        </div>
+        <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对 P95 的阈值趋势">
+          <span class="chart-loading-state">正在加载真实历史数据</span>
+        </div>
         <div class="env-grid metric-rail" id="enterpriseMetricRail">
           <div class="env-item" data-metric-slot="0">
             <span class="env-label">顶板离层速率</span>
@@ -124,11 +136,6 @@
           </div>
         </div>
         <div class="simulation-note" id="simulationNote">正在读取老师提供的真实监测数据</div>
-        <div class="section-heading compact-heading">
-          <span>真实历史 · P95 阈值指数</span>
-          <em>悬停查看原始值与单位</em>
-        </div>
-        <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对 P95 的阈值趋势"></div>
       </div>
     </section>
   </aside>

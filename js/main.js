@@ -263,6 +263,7 @@ function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
       const precision = ['supportResistance', 'anchorLoad', 'microseismicEnergy'].includes(key) ? 0 : 1;
       valueElement.textContent = Number.isFinite(value) ? `${value.toFixed(precision)} ${metric.unit}` : '--';
       valueElement.className = `env-value ${Number.isFinite(value) ? getMetricLevel(key, value) : 'safe'}`;
+      slot.dataset.status = Number.isFinite(value) ? getMetricLevel(key, value) : 'safe';
       const ratio = Number.isFinite(value)
         ? Math.max(0, Math.min(100, (value - metric.normal[0]) / (metric.danger - metric.normal[0]) * 100))
         : 0;
@@ -291,6 +292,7 @@ function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
     const valueElement = slot.querySelector('.env-value');
     valueElement.textContent = metric?.text || '--';
     valueElement.className = `env-value ${metric?.status || 'safe'}`;
+    slot.dataset.status = metric?.status || 'safe';
     slot.querySelector('.env-bar i').style.width = `${metric?.percent ?? 0}%`;
     let reference = slot.querySelector('.env-reference');
     if (!reference) {

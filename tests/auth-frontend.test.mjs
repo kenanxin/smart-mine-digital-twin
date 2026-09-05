@@ -97,10 +97,12 @@ test('application header exposes identity and logout instead of a portal switch'
   assert.doesNotMatch(html, /id="portalSwitch"|data-portal=/);
 });
 
-test('dashboard loads the patched ECharts release consistently', () => {
+test('dashboard self-hosts the patched ECharts release consistently', () => {
   const html = read('index.html');
   const packageJson = JSON.parse(read('package.json'));
-  assert.match(html, /echarts@6\.1\.0\/dist\/echarts\.min\.js/);
+  const vendorPath = path.join(ROOT, 'js/vendor/echarts.min.js');
+  assert.match(html, /\.\/js\/vendor\/echarts\.min\.js/);
+  assert.ok(fs.statSync(vendorPath).size > 1_000_000);
   assert.equal(packageJson.dependencies.echarts, '^6.1.0');
 });
 

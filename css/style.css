@@ -1896,6 +1896,7 @@ body::after,
 .metric-rail {
   grid-template-columns: 1fr;
   gap: 5px;
+  margin-top: 9px;
 }
 
 .metric-rail .env-item {
@@ -1903,10 +1904,21 @@ body::after,
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   gap: 2px 10px;
-  padding: 7px 9px;
+  padding: 8px 10px;
   border: 1px solid #26353d;
   border-left: 2px solid var(--telemetry-cyan);
   background: #10171c;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.metric-rail .env-item[data-status="warn"] {
+  border-left-color: #f2b84b;
+  background: #181a17;
+}
+
+.metric-rail .env-item[data-status="danger"] {
+  border-left-color: #f05b5b;
+  background: #1b1719;
 }
 
 .metric-rail .env-value {
@@ -1922,13 +1934,67 @@ body::after,
 
 .metric-rail .env-bar {
   grid-column: 1 / -1;
-  height: 3px;
+  position: relative;
+  height: 5px;
   background: #28343a;
+}
+
+.metric-rail .env-bar::after {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  width: 1px;
+  height: 9px;
+  content: '';
+  background: #f2b84b;
+  box-shadow: 0 0 5px rgba(242, 184, 75, 0.45);
 }
 
 .metric-rail .env-bar i {
   background: var(--telemetry-cyan);
 }
+
+.metric-rail .env-item[data-status="warn"] .env-bar i { background: #f2b84b; }
+.metric-rail .env-item[data-status="danger"] .env-bar i { background: #f05b5b; }
+
+.threshold-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #2a3941;
+  border-radius: 4px;
+  background: #2a3941;
+}
+
+.threshold-overview > div {
+  min-width: 0;
+  padding: 8px 6px 7px;
+  background: #10171c;
+  text-align: center;
+}
+
+.threshold-overview span,
+.threshold-overview b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.threshold-overview span {
+  margin-bottom: 3px;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.threshold-overview b {
+  color: #e8f1f5;
+  font: 700 15px/1.2 var(--font-num);
+}
+
+.threshold-overview > div:nth-child(2) b { color: #f05b5b; }
+.threshold-overview > div:nth-child(3) b { color: #f2b84b; }
 
 .section-heading {
   display: flex;
@@ -1938,6 +2004,11 @@ body::after,
   margin: 8px 0 2px;
   padding-top: 8px;
   border-top: 1px solid var(--workbench-line);
+}
+
+.threshold-heading {
+  margin-top: 7px;
+  padding-top: 7px;
 }
 
 .section-heading span {
@@ -1959,7 +2030,25 @@ body::after,
 }
 
 .trend-chart {
-  height: 176px;
+  height: 238px;
+  min-height: 238px;
+  overflow: hidden;
+  border: 1px solid #26353d;
+  border-radius: 4px;
+  background-color: #0d1418;
+}
+
+.chart-loading-state,
+.chart-load-failed {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.chart-load-failed {
+  border-color: rgba(240, 91, 91, 0.5);
+  color: #f28a84;
 }
 
 .compact-chart {

@@ -60,9 +60,47 @@ function buildThresholdTrend(current, history) {
         .filter(Boolean)
         .sort((left, right) => left.timestamp - right.timestamp),
     }))
-    .filter((item) => item.points.length);
+    .filter((item) => item.points.length)
+    .sort((left, right) => {
+      const leftLatest = left.points.at(-1)?.index ?? Number.NEGATIVE_INFINITY;
+      const rightLatest = right.points.at(-1)?.index ?? Number.NEGATIVE_INFINITY;
+      return rightLatest - leftLatest;
+    });
 
-  return { reference: 100, series };
+  if (series.length) {
+    const peak = Math.max(...series.flatMap((item) => item.points.map((point) => point.index)));
+    return {
+      mode: 'p95',
+      reference: 100,
+      sampleCount: Math.max(...series.map((item) => item.points.length)),
+      exceededCount: series.filter((item) => (item.points.at(-1)?.index ?? 0) >= 100).length,
+      peakIndex: round(peak, 1),
+      series,
+    };
+  }
+
+  const scorePoints = points
+    .map((point) => {
+      const timestamp = parseRoofRiskTimestamp(point.timestamp);
+      const score = Number(point.score);
+      if (!Number.isFinite(timestamp) || !Number.isFinite(score)) return null;
+      return { timestamp, index: score, rawValue: score, unit: '分', sourceTimestamp: point.timestamp };
+    })
+    .filter(Boolean)
+    .sort((left, right) => left.timestamp - right.timestamp);
+
+  if (scorePoints.length) {
+    return {
+      mode: 'risk-score',
+      reference: 70,
+      sampleCount: scorePoints.length,
+      exceededCount: null,
+      peakIndex: round(Math.max(...scorePoints.map((point) => point.index)), 1),
+      series: [{ key: 'risk_score', label: '综合风险分', unit: '分', points: scorePoints }],
+    };
+  }
+
+  return { mode: 'empty', reference: 100, sampleCount: 0, exceededCount: 0, peakIndex: null, series: [] };
 }
 
 function buildProbabilities(current) {

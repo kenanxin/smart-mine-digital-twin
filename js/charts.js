@@ -53,7 +53,13 @@ function getResizeObserver() {
 
 function initChart(domId) {
   const dom = document.getElementById(domId);
-  if (!dom || !dom.clientWidth || !dom.clientHeight || typeof echarts === 'undefined') return null;
+  if (!dom || !dom.clientWidth || !dom.clientHeight) return null;
+  if (typeof echarts === 'undefined') {
+    dom.classList.add('chart-load-failed');
+    dom.textContent = '图表组件加载失败，请刷新页面';
+    return null;
+  }
+  dom.classList.remove('chart-load-failed');
   registerTheme();
   let chart = echarts.getInstanceByDom(dom);
   if (!chart) chart = echarts.init(dom, 'smartMineIndustrial', { renderer: 'canvas' });
@@ -104,12 +110,15 @@ function emptyGraphic(message) {
 }
 
 function thresholdTrendOption(model) {
-  const visibleSeries = model.thresholdTrend.series.slice(0, 4);
+  const trend = model.thresholdTrend;
+  const visibleSeries = trend.series.slice(0, 4);
   if (!visibleSeries.length) return { series: [], graphic: emptyGraphic('暂无连续历史数据') };
+  const isRiskScore = trend.mode === 'risk-score';
+  const referenceLabel = isRiskScore ? '较大风险线' : 'P95 阈值';
   return {
-    animationDuration: 320,
-    grid: { left: 48, right: 18, top: 44, bottom: 32, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
-    legend: { top: 0, left: 0, type: 'scroll', itemWidth: 18, itemHeight: 3, itemGap: 14, textStyle: { fontSize: 10 } },
+    animationDuration: 520,
+    grid: { left: 43, right: 14, top: 48, bottom: 30, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
+    legend: { top: 3, left: 0, right: 0, type: 'scroll', itemWidth: 16, itemHeight: 3, itemGap: 12, textStyle: { fontSize: 10 } },
     tooltip: {
       ...baseTooltip('axis'),
       axisPointer: { type: 'line', lineStyle: { color: '#607681', type: 'dashed' } },
@@ -119,7 +128,9 @@ function thresholdTrendOption(model) {
         params.forEach((param) => {
           const raw = param.data?.rawValue;
           const unit = param.data?.unit || '';
-          lines.push(`${param.seriesName}  ${numberLabel(raw)} ${unit}  /  ${numberLabel(param.value?.[1], 1)}% P95`);
+          lines.push(isRiskScore
+            ? `${param.seriesName}  ${numberLabel(raw)} 分`
+            : `${param.seriesName}  ${numberLabel(raw)} ${unit}  /  ${numberLabel(param.value?.[1], 1)}% P95`);
         });
         return lines.join('\n');
       },
@@ -127,10 +138,11 @@ function thresholdTrendOption(model) {
     xAxis: { type: 'time', boundaryGap: false, axisLabel: { formatter: (value) => timeLabel(value), hideOverlap: true, fontSize: 10 } },
     yAxis: {
       type: 'value',
-      name: 'P95 阈值指数 (%)',
+      name: isRiskScore ? '综合风险分' : 'P95 指数 (%)',
       nameTextStyle: { color: '#81949e', fontSize: 10, padding: [0, 0, 4, 0] },
-      axisLabel: { formatter: '{value}%', fontSize: 10 },
-      min: (range) => Math.min(0, Math.floor(range.min / 25) * 25),
+      axisLabel: { formatter: isRiskScore ? '{value}' : '{value}%', fontSize: 10 },
+      min: 0,
+      max: (range) => Math.max(isRiskScore ? 100 : 125, Math.ceil(range.max / 25) * 25),
     },
     series: visibleSeries.map((item, index) => ({
       id: item.key,
@@ -139,15 +151,39 @@ function thresholdTrendOption(model) {
       showSymbol: false,
       smooth: 0.22,
       sampling: 'lttb',
-      lineStyle: { width: index === 0 ? 2.2 : 1.5 },
+      lineStyle: { width: index === 0 ? 2.6 : 1.6, shadowBlur: index === 0 ? 7 : 0, shadowColor: SERIES_COLORS[index] },
+      areaStyle: index === 0 ? { opacity: 0.1 } : undefined,
+      endLabel: { show: index === 0, formatter: (params) => isRiskScore ? `${numberLabel(params.value?.[1], 0)} 分` : `${numberLabel(params.value?.[1], 0)}%`, color: SERIES_COLORS[index], fontSize: 10 },
+      labelLayout: { moveOverlap: 'shiftY' },
       emphasis: { focus: 'series' },
-      data: item.points.map((point) => ({ value: [point.timestamp, point.index], rawValue: point.rawValue, unit: point.unit })),
+      data: item.points.map((point, pointIndex) => ({
+        value: [point.timestamp, point.index],
+        rawValue: point.rawValue,
+        unit: point.unit,
+        symbol: pointIndex === item.points.length - 1 ? 'circle' : 'none',
+        symbolSize: pointIndex === item.points.length - 1 ? (index === 0 ? 9 : 6) : 0,
+      })),
       markLine: index === 0 ? {
         silent: true,
         symbol: 'none',
-        label: { formatter: 'P95 参考线', color: '#f2b84b', fontSize: 10 },
+        label: { formatter: referenceLabel, color: '#f2b84b', fontSize: 10 },
         lineStyle: { color: '#f2b84b', width: 1, type: 'dashed' },
-        data: [{ yAxis: model.thresholdTrend.reference }],
+        data: [{ yAxis: trend.reference }],
+      } : undefined,
+      markArea: index === 0 ? {
+        silent: true,
+        label: { show: false },
+        data: isRiskScore
+          ? [
+            [{ yAxis: 0, itemStyle: { color: 'rgba(80,200,120,0.045)' } }, { yAxis: 40 }],
+            [{ yAxis: 40, itemStyle: { color: 'rgba(242,184,75,0.05)' } }, { yAxis: 70 }],
+            [{ yAxis: 70, itemStyle: { color: 'rgba(240,91,91,0.07)' } }, { yAxis: 100 }],
+          ]
+          : [
+            [{ yAxis: 0, itemStyle: { color: 'rgba(80,200,120,0.045)' } }, { yAxis: 80 }],
+            [{ yAxis: 80, itemStyle: { color: 'rgba(242,184,75,0.05)' } }, { yAxis: 100 }],
+            [{ yAxis: 100, itemStyle: { color: 'rgba(240,91,91,0.07)' } }, { yAxis: 'max' }],
+          ],
       } : undefined,
     })),
   };
@@ -213,6 +249,15 @@ export function initPortalCharts() {
 
 export function updateRoofRiskCharts({ current = {}, history = {}, events = {} } = {}) {
   const model = buildRoofRiskChartModel(current, history, events);
+  const trend = model.thresholdTrend;
+  const title = document.getElementById('thresholdTrendTitle');
+  const hint = document.getElementById('thresholdTrendHint');
+  if (title) title.textContent = trend.mode === 'risk-score' ? '真实历史 · 综合风险趋势' : '真实历史 · P95 阈值指数';
+  if (hint) hint.textContent = trend.mode === 'risk-score' ? '接口待升级，当前展示真实风险分' : '100% = P95 阈值 · 悬停查看原始值';
+  const setSummary = (id, value) => { const element = document.getElementById(id); if (element) element.textContent = value; };
+  setSummary('thresholdSampleCount', trend.sampleCount ? `${trend.sampleCount} 条` : '--');
+  setSummary('thresholdExceededCount', trend.exceededCount == null ? '待升级' : `${trend.exceededCount} 项`);
+  setSummary('thresholdPeakIndex', trend.peakIndex == null ? '--' : `${numberLabel(trend.peakIndex, 1)}${trend.mode === 'risk-score' ? ' 分' : '%'}`);
   const options = {
     thresholdTrendChart: thresholdTrendOption(model),
     regulatorDistributionChart: distributionOption(model),

@@ -68,6 +68,23 @@ test('builds a real time-series threshold index with raw values and units', () =
   assert.equal(model.thresholdTrend.series[0].points[1].unit, 'mm/d');
   assert.ok(Number.isFinite(model.thresholdTrend.series[0].points[0].timestamp));
   assert.ok(model.thresholdTrend.series[0].points[0].timestamp < model.thresholdTrend.series[0].points[1].timestamp);
+  assert.equal(model.thresholdTrend.mode, 'p95');
+  assert.equal(model.thresholdTrend.sampleCount, 2);
+  assert.equal(model.thresholdTrend.exceededCount, 2);
+  assert.equal(model.thresholdTrend.peakIndex, 200);
+});
+
+test('falls back to truthful risk-score history when an older API omits metric history', () => {
+  const model = buildRoofRiskChartModel(current, {
+    points: [
+      { timestamp: '2025/11/8 14:20', score: 62 },
+      { timestamp: '2025/11/8 14:22', score: 95 },
+    ],
+  }, events);
+  assert.equal(model.thresholdTrend.mode, 'risk-score');
+  assert.equal(model.thresholdTrend.series.length, 1);
+  assert.equal(model.thresholdTrend.series[0].label, '综合风险分');
+  assert.deepEqual(model.thresholdTrend.series[0].points.map((point) => point.rawValue), [62, 95]);
 });
 
 test('orders four-class probabilities from low to severe without rounding away detail', () => {
