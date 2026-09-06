@@ -3,17 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#10191e">
 <title>智慧矿山数字孪生综合管控平台</title>
 <link rel="stylesheet" href="css/style.css">
 <!-- ECharts -->
 <script src="./js/vendor/echarts.min.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#threeContainer">跳到井下数字孪生主视图</a>
 
 <!-- ============ 顶部标题栏 ============ -->
 <header class="header">
   <div class="header-left">
-    <img src="images/logo.jpg" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+    <img src="images/logo.jpg" alt="系统标志" class="header-logo" width="38" height="38" onerror="this.style.display='none'">
     <div class="header-title-group">
       <h1 class="header-title">煤矿顶板灾变智能预警与可视化决策系统</h1>
       <span class="header-subtitle">Digital Twin Roof Disaster Early Warning & Decision Platform</span>
@@ -51,7 +54,6 @@
     <!-- 设备状态 -->
     <section class="card">
       <div class="card-header">
-        <span class="card-icon">⚙️</span>
         <span class="card-title">设备运行状态</span>
         <span class="equipment-total" id="equipmentTotal">共 12 套</span>
       </div>
@@ -108,10 +110,6 @@
         <span id="roofWarningStage">顶板垮落预警</span>
         <em id="roofWarningLevel">红色预警</em>
       </div>
-      <div class="roof-warning-score">
-        <b id="roofWarningScore">92</b>
-        <span>顶板综合风险指数</span>
-      </div>
       <div class="roof-warning-grid">
         <p><i>触发指标</i><strong id="roofWarningTrigger">顶板离层量、支架工作阻力、微震能量</strong></p>
         <p><i>处置建议</i><strong id="roofWarningAdvice">离层量、支架阻力和微震能量多源耦合异常，立即执行红色预警处置。</strong></p>
@@ -132,7 +130,7 @@
       </div>
     </div>
     <div class="scene-tips">
-      🖱️ 左键旋转 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b style="color:#ffc95e">右键→平移模式</b>
+      <span>视角操作</span> 左键旋转 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b>右键切换平移</b>
     </div>
   </main>
 
@@ -142,7 +140,6 @@
     <!-- 风险态势 -->
     <section class="card">
       <div class="card-header">
-        <span class="card-icon">▣</span>
         <span class="card-title">顶板风险态势</span>
       </div>
       <div class="card-body">
@@ -166,7 +163,6 @@
     <!-- 安全预警 -->
     <section class="card">
       <div class="card-header">
-        <span class="card-icon">🛡️</span>
         <span class="card-title">安全预警中心</span>
         <span class="card-badge safe">无重大风险</span>
       </div>
@@ -178,7 +174,6 @@
     <!-- 三端闭环 -->
     <section class="card closed-loop-card">
       <div class="card-header">
-        <span class="card-icon">◎</span>
         <span class="card-title">三端协同闭环</span>
         <span class="card-badge warn" id="enterpriseLoopStatus">处置中</span>
       </div>
@@ -200,7 +195,6 @@
     <!-- 顶板灾变智能决策 -->
     <section class="card decision-card">
       <div class="card-header">
-        <span class="card-icon">🧠</span>
         <span class="card-title">智能决策建议</span>
         <span class="decision-badge safe" id="decisionBadge">巡检</span>
       </div>
@@ -246,25 +240,32 @@
   </div>
   <div class="card-body">
     <div class="threshold-overview" id="thresholdOverview" aria-live="polite">
-      <div><span>连续样本</span><b id="thresholdSampleCount">--</b></div>
+      <div><span>当前模型等级</span><b id="currentModelLevel">--</b></div>
+      <div><span>模型证据项</span><b id="modelEvidenceCount">--</b></div>
       <div><span>统计偏离项</span><b id="thresholdExceededCount">--</b></div>
-      <div><span>峰值偏离位置</span><b id="thresholdPeakIndex">--</b></div>
+      <div><span>连续样本</span><b id="thresholdSampleCount">--</b><em id="thresholdPeakIndex">峰值 --</em></div>
     </div>
-    <div class="section-heading compact-heading threshold-heading">
-      <span id="thresholdTrendTitle">真实历史 · 统计参考偏离趋势</span>
-      <em id="thresholdTrendHint">100% = P05/P95 统计参考边界 · 悬停查看原始值</em>
-    </div>
-    <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对各自 P05-P95 参考范围的偏离趋势">
-      <span class="chart-loading-state">正在加载真实历史数据</span>
+    <div class="attention-summary" id="enterpriseAttentionSummary" aria-live="polite">
+      <strong>重点关注</strong>
+      <span>正在读取当前记录的模型证据与统计偏离</span>
     </div>
     <div class="env-grid metric-rail" id="enterpriseMetricRail">
-      <div class="env-item" data-metric-slot="0"><span class="env-label">顶板离层速率</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
-      <div class="env-item" data-metric-slot="1"><span class="env-label">锚杆轴力增量</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
-      <div class="env-item" data-metric-slot="2"><span class="env-label">锚索轴力增量</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
-      <div class="env-item" data-metric-slot="3"><span class="env-label">支架阻力</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
-      <div class="env-item" data-metric-slot="4"><span class="env-label">涌水量</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
-      <div class="env-item" data-metric-slot="5"><span class="env-label">微震能量</span><span class="env-value safe">--</span><span class="env-bar"><i style="width:0"></i></span></div>
-      <div class="env-item metric-wide" data-metric-slot="6"><span class="env-label">距水体/岩溶体距离</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span></div>
+      <div class="env-item" data-metric-slot="0" data-metric-key="roof_separation_rate"><span class="env-label">顶板离层速率</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span><span class="env-state">等待数据</span></div>
+      <div class="env-item" data-metric-slot="1" data-metric-key="bolt_axial_force_increment"><span class="env-label">锚杆轴力增量</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span><span class="env-state">等待数据</span></div>
+      <div class="env-item" data-metric-slot="2" data-metric-key="cable_axial_force_increment"><span class="env-label">锚索轴力增量</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span><span class="env-state">等待数据</span></div>
+      <div class="env-item" data-metric-slot="3" data-metric-key="support_resistance"><span class="env-label">支架阻力</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span><span class="env-state">等待数据</span></div>
+      <div class="env-item" data-metric-slot="4" data-metric-key="water_inflow"><span class="env-label">涌水量</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span><span class="env-state">等待数据</span></div>
+      <div class="env-item" data-metric-slot="5" data-metric-key="microseismic_energy"><span class="env-label">微震能量</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span><span class="env-state">等待数据</span></div>
+      <div class="env-item" data-metric-slot="6" data-metric-key="distance_to_water"><span class="env-label">距水体/岩溶体距离</span><span class="env-value safe">--</span><span class="env-reference">P05-P95 参考范围</span><span class="env-bar"><i style="width:0"></i></span><span class="env-state">低侧接近需关注</span></div>
+    </div>
+    <div class="trend-evidence">
+      <div class="section-heading compact-heading threshold-heading">
+        <span id="thresholdTrendTitle">真实历史 · 统计参考偏离趋势</span>
+        <em id="thresholdTrendHint">100% = P05/P95 统计参考边界 · 悬停查看原始值</em>
+      </div>
+      <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对各自 P05-P95 参考范围的偏离趋势">
+        <span class="chart-loading-state">正在加载真实历史数据</span>
+      </div>
     </div>
     <div class="simulation-note" id="simulationNote">正在读取老师提供的真实监测数据</div>
   </div>

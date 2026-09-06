@@ -5,6 +5,8 @@ const sharp = require('C:/Users/欣/.cache/codex-runtimes/codex-primary-runtime/
 
 const baseUrl = process.argv[2] || 'http://127.0.0.1:8092';
 const outputDir = path.resolve(process.argv[3] || 'tools/.generated/three-portal-ui');
+const roleFilter = process.argv[4] || '';
+const viewportFilter = process.argv[5] || '';
 const accounts = [
   { role: 'enterprise', username: 'enterprise_operator', password: process.env.ENTERPRISE_QA_PASSWORD || 'Mine@2026', charts: ['thresholdTrendChart', 'replayTrendChart'] },
   { role: 'regulator', username: 'regulator_officer', password: process.env.REGULATOR_QA_PASSWORD || 'Safe@2026', charts: ['regulatorDistributionChart'] },
@@ -51,12 +53,19 @@ async function inspectRole(browser, account, viewport, suffix) {
     }, chartId, { timeout: 30_000 });
   }
   if (account.role === 'enterprise') {
-    await page.waitForFunction(() => Boolean(document.querySelector('#threeContainer canvas')) && typeof window.__mineCameraState === 'function', null, { timeout: 45_000 });
+    await page.waitForFunction(() => Boolean(document.querySelector('#threeContainer canvas'))
+      && Boolean(document.querySelector('#threeContainer')?.dataset.cameraPosition), null, { timeout: 45_000 });
     await page.waitForTimeout(3_000);
   }
 
   let replay = null;
   if (account.role === 'enterprise') {
+    const stabilityBefore = await page.evaluate(() => ({
+      camera: document.getElementById('threeContainer')?.dataset.cameraPosition,
+      target: document.getElementById('threeContainer')?.dataset.cameraTarget,
+      bodyHeight: document.body.scrollHeight,
+      coreHeight: document.getElementById('enterpriseCoreMonitoring')?.getBoundingClientRect().height,
+    }));
     const workbench = page.locator('#replayWorkbench');
     await workbench.scrollIntoViewIfNeeded();
     await page.waitForFunction(() => Boolean(document.querySelector('#replayTrendChart canvas'))
@@ -87,6 +96,14 @@ async function inspectRole(browser, account, viewport, suffix) {
     await page.waitForFunction((index) => Number(document.getElementById('replaySeek')?.value) >= index + 2, speedStartIndex, { timeout: 3_000 });
     await page.locator('#replayPlayPause').click();
     const speedEndIndex = Number(await page.locator('#replaySeek').inputValue());
+    const stabilityAfter = await page.evaluate(() => ({
+      camera: document.getElementById('threeContainer')?.dataset.cameraPosition,
+      target: document.getElementById('threeContainer')?.dataset.cameraTarget,
+      bodyHeight: document.body.scrollHeight,
+      coreHeight: document.getElementById('enterpriseCoreMonitoring')?.getBoundingClientRect().height,
+      primaryScore: document.getElementById('riskScore')?.textContent,
+      replayScore: document.getElementById('replayRisk')?.textContent?.split('·')[0]?.trim(),
+    }));
 
     const chartScreenshot = path.join(outputDir, `${account.role}-${suffix}-replay-chart.png`);
     await page.locator('#replayTrendChart').screenshot({ path: chartScreenshot });
@@ -102,6 +119,11 @@ async function inspectRole(browser, account, viewport, suffix) {
       speedStartIndex,
       speedEndIndex,
       speed: Number(await page.locator('[data-replay-speed].active').getAttribute('data-replay-speed')),
+      displayConsistent: stabilityAfter.primaryScore === stabilityAfter.replayScore,
+      cameraStable: stabilityBefore.camera === stabilityAfter.camera && stabilityBefore.target === stabilityAfter.target,
+      layoutStable: stabilityBefore.bodyHeight === stabilityAfter.bodyHeight && stabilityBefore.coreHeight === stabilityAfter.coreHeight,
+      stabilityBefore,
+      stabilityAfter,
       chartScreenshot,
       chartStdev: chartStats.channels.slice(0, 3).map((channel) => Number(channel.stdev.toFixed(2))),
     };
@@ -180,9 +202,15 @@ async function main() {
   });
   try {
     const results = [];
-    for (const account of accounts) {
-      results.push(await inspectRole(browser, account, { width: 1440, height: 900 }, 'desktop'));
-      results.push(await inspectRole(browser, account, { width: 390, height: 844 }, 'mobile'));
+    const viewports = [
+      { viewport: { width: 1920, height: 1080 }, suffix: 'presentation' },
+      { viewport: { width: 1366, height: 768 }, suffix: 'laptop' },
+      { viewport: { width: 390, height: 844 }, suffix: 'mobile' },
+    ];
+    for (const account of accounts.filter((item) => !roleFilter || item.role === roleFilter)) {
+      for (const item of viewports.filter((entry) => !viewportFilter || entry.suffix === viewportFilter)) {
+        results.push(await inspectRole(browser, account, item.viewport, item.suffix));
+      }
     }
     const failures = results.flatMap((result) => {
       const overflow = Math.max(result.layout.documentWidth, result.layout.bodyWidth) > result.layout.viewport[0] + 1;
@@ -196,6 +224,9 @@ async function main() {
       if (result.replay && result.replay.nextDelta !== 1) issues.push('replay next did not advance exactly one record');
       if (result.replay && result.replay.speed !== 5) issues.push('replay 5x speed was not selected');
       if (result.replay && result.replay.speedEndIndex < result.replay.speedStartIndex + 2) issues.push('replay 5x did not advance');
+      if (result.replay && !result.replay.displayConsistent) issues.push('primary score and replay score diverged');
+      if (result.replay && !result.replay.cameraStable) issues.push('Three.js camera moved during replay');
+      if (result.replay && !result.replay.layoutStable) issues.push('layout shifted during replay');
       if (result.replay && Math.max(...result.replay.chartStdev) < 12) issues.push('replay chart pixel variance is too low');
       const unexpectedConsoleErrors = result.consoleErrors.filter((message) => !message.startsWith('Failed to load resource:'));
       if (unexpectedConsoleErrors.length) issues.push(`console errors: ${unexpectedConsoleErrors.join(' | ')}`);

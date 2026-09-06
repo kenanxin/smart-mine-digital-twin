@@ -64,6 +64,10 @@ test('enterprise main controller owns one replay controller and authenticated re
   assert.match(main, /\/api\/roof-risk\/replay\/meta/);
   assert.match(main, /\/api\/roof-risk\/replay\/frame/);
   assert.match(main, /applyReplayFrame/);
+  assert.match(main, /liveRoofRiskApiPayload/);
+  assert.match(main, /replayRoofRiskApiPayload/);
+  assert.match(main, /activateReplayDisplay/);
+  assert.doesNotMatch(main, /await replayController\.seek\(replayMeta\.default_index\);\s*replayController\.play\(\)/s);
 });
 
 test('replay summary risk color follows the active real record level', () => {
@@ -90,4 +94,28 @@ test('enterprise uses statistical reference language instead of calling percenti
   assert.match(html, /统计参考偏离趋势/);
   assert.match(html, /100% = P05\/P95 统计参考边界/);
   assert.doesNotMatch(html, /P95 阈值|最高阈值指数|当前超 P95/);
+});
+
+test('enterprise command surface has one primary risk score and stable evidence landmarks', () => {
+  assert.match(html, /class="skip-link"[^>]*href="#threeContainer"/);
+  assert.match(html, /id="enterpriseAttentionSummary"/);
+  assert.match(html, /id="currentModelLevel"/);
+  assert.match(html, /id="modelEvidenceCount"/);
+  assert.match(html, /data-metric-key="distance_to_water"/);
+  assert.match(html, /class="env-state"/);
+  assert.doesNotMatch(html, /id="roofWarningScore"/);
+  assert.equal((html.match(/id="riskScore"/g) || []).length, 1);
+});
+
+test('enterprise attention summary distinguishes model evidence from statistical deviation', () => {
+  assert.match(main, /metric\.isModelEvidence \|\| metric\.isReferenceDeviation/);
+  assert.match(main, /模型证据/);
+  assert.doesNotMatch(main, /metric\.isReferenceDeviation \|\| metric\.status !== 'safe'/);
+});
+
+test('core monitoring uses a dense rail layout rather than a grid of metric cards', () => {
+  assert.match(css, /\.core-monitoring-workbench \.card-body[^}]*grid-template-columns:/s);
+  assert.match(css, /\.metric-rail \.env-item[^}]*grid-template-columns:/s);
+  assert.match(css, /\.metric-rail \.env-item[^}]*border-bottom:/s);
+  assert.match(css, /\.attention-summary/);
 });

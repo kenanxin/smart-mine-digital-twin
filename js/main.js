@@ -17,6 +17,10 @@ let roofDemoTimer = null;
 let roofDemoIndex = -1;
 let roofDemoPlaying = false;
 let latestRoofRiskApiPayload = null;
+let liveRoofRiskApiPayload = null;
+let replayRoofRiskApiPayload = null;
+let replayRoofRiskFrame = null;
+let replayDisplayActive = false;
 let latestRoofRiskEventsPayload = {};
 let replayController = null;
 let replayMeta = null;
@@ -272,6 +276,8 @@ function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
         ? Math.max(0, Math.min(100, (value - metric.normal[0]) / (metric.danger - metric.normal[0]) * 100))
         : 0;
       slot.querySelector('.env-bar i').style.width = `${ratio}%`;
+      const state = slot.querySelector('.env-state');
+      if (state) state.textContent = Number.isFinite(value) ? '灾变阶段演示' : '等待数据';
       let reference = slot.querySelector('.env-reference');
       if (!reference) {
         reference = document.createElement('span');
@@ -297,6 +303,9 @@ function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
     valueElement.textContent = metric?.text || '--';
     valueElement.className = `env-value ${metric?.status || 'safe'}`;
     slot.dataset.status = metric?.status || 'safe';
+    slot.dataset.referenceDirection = metric?.referenceDirection || 'high';
+    slot.dataset.referenceDeviation = metric?.isReferenceDeviation ? 'true' : 'false';
+    slot.id = metric?.key ? `metric-${metric.key}` : '';
     slot.querySelector('.env-bar i').style.width = `${metric?.percent ?? 0}%`;
     let reference = slot.querySelector('.env-reference');
     if (!reference) {
@@ -307,7 +316,51 @@ function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
     reference.textContent = Number.isFinite(metric?.p05) && Number.isFinite(metric?.p95)
       ? `P05 ${metric.p05} · P95 ${metric.p95} ${metric.unit || ''}`
       : '参考范围不可用';
+    const state = slot.querySelector('.env-state');
+    if (state) {
+      state.textContent = !metric?.referenceAvailable
+        ? '参考不可用'
+        : metric.isReferenceDeviation
+          ? `${metric.referenceDeviationSide === 'low' ? '低侧' : '高侧'}统计偏离`
+          : metric.isModelEvidence
+            ? '模型证据'
+            : '参考范围内';
+    }
   });
+
+  setText('currentModelLevel', viewModel.available ? viewModel.model.predictedClass : '--');
+  setText('modelEvidenceCount', viewModel.available ? `${viewModel.model.evidenceCount ?? 0} 项` : '--');
+  const attention = document.getElementById('enterpriseAttentionSummary');
+  if (attention) {
+    const noteworthy = metrics.filter((metric) => metric.isModelEvidence || metric.isReferenceDeviation);
+    const title = document.createElement('strong');
+    title.textContent = '重点关注';
+    const list = document.createElement('div');
+    if (!viewModel.available) {
+      const message = document.createElement('span');
+      message.textContent = viewModel.message || '真实数据暂不可用';
+      list.append(message);
+    } else if (!noteworthy.length) {
+      const normal = document.createElement('span');
+      normal.textContent = '当前记录未发现模型关注项或统计偏离';
+      list.append(normal);
+    } else {
+      noteworthy.forEach((metric) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = metric.status === 'danger' ? 'danger' : 'warning';
+        const evidenceLabel = metric.isModelEvidence && metric.isReferenceDeviation
+          ? `模型证据 / ${metric.referenceDeviationSide === 'low' ? '低侧' : '高侧'}统计偏离`
+          : metric.isModelEvidence
+            ? '模型证据'
+            : `${metric.referenceDeviationSide === 'low' ? '低侧' : '高侧'}统计偏离`;
+        button.textContent = `${metric.label} · ${evidenceLabel}`;
+        button.addEventListener('click', () => document.getElementById(`metric-${metric.key}`)?.scrollIntoView({ block: 'center' }));
+        list.append(button);
+      });
+    }
+    attention.replaceChildren(title, list);
+  }
 }
 
 function renderExpertModel(viewModel) {
@@ -356,7 +409,10 @@ function renderReplayEvents(meta) {
     </button>
   `).join('');
   track.querySelectorAll('[data-replay-index]').forEach((button) => {
-    button.addEventListener('click', () => replayController?.seek(Number(button.dataset.replayIndex)));
+    button.addEventListener('click', () => {
+      activateReplayDisplay();
+      replayController?.seek(Number(button.dataset.replayIndex));
+    });
   });
 }
 
@@ -394,7 +450,8 @@ function renderReplayControllerState(state) {
 function applyReplayFrame(frame) {
   const payload = frame.current;
   const viewModel = mapRoofRiskViewModel(payload);
-  latestRoofRiskApiPayload = payload;
+  replayRoofRiskApiPayload = payload;
+  replayRoofRiskFrame = frame;
 
   setText('replayIndex', `${frame.index + 1} / ${new Intl.NumberFormat('zh-CN').format(frame.total)}`);
   setText('replayRecordId', viewModel.provenance.recordId);
@@ -409,11 +466,6 @@ function applyReplayFrame(frame) {
   setText('replaySourceHash', viewModel.provenance.hashShort);
   setText('replayTrueClass', payload.model_output?.true_class || '--');
   setText('replayPredictedClass', payload.model_output?.predicted_class || '--');
-  setText('enterpriseSourceName', payload.provenance?.source_name || 'teacher_roof_monitoring.csv');
-  setText('enterpriseRecordId', viewModel.provenance.recordId);
-  setText('enterpriseRecordTime', viewModel.provenance.timestamp);
-  setText('enterpriseDeviceId', viewModel.provenance.deviceId);
-  setText('enterpriseSourceHash', viewModel.provenance.hashShort);
 
   const metricGrid = document.getElementById('replayMetricGrid');
   if (metricGrid) metricGrid.innerHTML = viewModel.metrics.filter((metric) => metric.key !== 'data_quality').map(replayMetricMarkup).join('');
@@ -425,12 +477,27 @@ function applyReplayFrame(frame) {
     workbench.dataset.riskLevel = payload.risk?.level || 'green';
   }
 
-  renderEnterpriseMetricSlots(viewModel);
-  showRoofWarningPanelFromApi(payload);
-  renderApiDecisionPanel(payload);
   updateReplayChart({ current: payload, history: frame.history });
-  updateRoofRiskCharts({ current: payload, history: frame.history, events: latestRoofRiskEventsPayload });
+  if (replayDisplayActive) {
+    latestRoofRiskApiPayload = replayRoofRiskApiPayload;
+    setText('enterpriseSourceName', payload.provenance?.source_name || 'teacher_roof_monitoring.csv');
+    setText('enterpriseRecordId', viewModel.provenance.recordId);
+    setText('enterpriseRecordTime', viewModel.provenance.timestamp);
+    setText('enterpriseDeviceId', viewModel.provenance.deviceId);
+    setText('enterpriseSourceHash', viewModel.provenance.hashShort);
+    renderEnterpriseMetricSlots(viewModel);
+    showRoofWarningPanelFromApi(payload);
+    renderApiDecisionPanel(payload);
+    updateRoofRiskCharts({ current: payload, history: frame.history, events: latestRoofRiskEventsPayload });
+  }
 
+}
+
+function activateReplayDisplay() {
+  if (replayDisplayActive) return;
+  replayDisplayActive = true;
+  document.body.dataset.roofDataMode = 'replay';
+  if (replayRoofRiskFrame) applyReplayFrame(replayRoofRiskFrame);
 }
 
 async function loadReplayFrame(index) {
@@ -461,20 +528,31 @@ async function initReplayWorkbench() {
       onFrame: applyReplayFrame,
       onState: renderReplayControllerState,
     });
-    document.getElementById('replayPrevious')?.addEventListener('click', () => replayController.previous());
-    document.getElementById('replayNext')?.addEventListener('click', () => replayController.next());
+    document.getElementById('replayPrevious')?.addEventListener('click', () => {
+      activateReplayDisplay();
+      replayController.previous();
+    });
+    document.getElementById('replayNext')?.addEventListener('click', () => {
+      activateReplayDisplay();
+      replayController.next();
+    });
     document.getElementById('replayPlayPause')?.addEventListener('click', () => {
       if (replayController.snapshot().status === 'playing') replayController.pause();
-      else replayController.play();
+      else {
+        activateReplayDisplay();
+        replayController.play();
+      }
     });
-    seek.addEventListener('change', () => replayController.seek(Number(seek.value)));
+    seek.addEventListener('change', () => {
+      activateReplayDisplay();
+      replayController.seek(Number(seek.value));
+    });
     document.querySelectorAll('[data-replay-speed]').forEach((button) => {
       button.addEventListener('click', () => replayController.setSpeed(Number(button.dataset.replaySpeed)));
     });
     document.getElementById('replayLoop')?.addEventListener('change', (event) => replayController.setLoop(event.target.checked));
 
     await replayController.seek(replayMeta.default_index);
-    replayController.play();
   } catch (error) {
     renderReplayControllerState({ status: 'error', index: 0, speed: 1, loop: false, error: error.message });
   }
@@ -728,10 +806,10 @@ function updateRoofDemoButton() {
   if (roofDemoPlaying) {
     const current = ROOF_DEMO_SEQUENCE[roofDemoIndex];
     const disaster = getDisasterList().find(item => item.id === current?.id);
-    demoBtn.textContent = `⏵ 全过程演示中：${disaster?.name ?? '顶板预警'}`;
+    demoBtn.textContent = `演示进行中：${disaster?.name ?? '顶板预警'}`;
     demoBtn.classList.add('playing');
   } else {
-    demoBtn.textContent = '▶ 顶板灾变全过程演示';
+    demoBtn.textContent = '开始顶板灾变全过程演示';
     demoBtn.classList.remove('playing', 'active');
   }
 }
@@ -834,25 +912,25 @@ function setupDisasterPanel() {
   if (!panel) return;
 
   const disasters = getDisasterList();
-  const flowIcons = {
-    normalMonitor: '🟢',
-    roofPressureRise: '📈',
-    roofSeparationAlarm: '↕',
-    supportResistanceAlarm: '⚙️',
-    roofFallWarning: '🪨',
-    emergencyResponse: '🆘',
+  const stageCodes = {
+    normalMonitor: '01',
+    roofPressureRise: '02',
+    roofSeparationAlarm: '03',
+    supportResistanceAlarm: '04',
+    roofFallWarning: '05',
+    emergencyResponse: '06',
   };
   panel.innerHTML = `
     <button class="disaster-btn demo-btn" id="roofFullDemoBtn" title="自动播放顶板灾变从正常监测到应急处置的完整闭环">
-      ▶ 顶板灾变全过程演示
+      开始顶板灾变全过程演示
     </button>
   ` + disasters.map(d => `
     <button class="disaster-btn" data-id="${d.id}" title="${d.desc}">
-      ${flowIcons[d.id] ?? '🪨'}
+      <span class="stage-code" aria-hidden="true">${stageCodes[d.id] ?? '--'}</span>
       ${d.name}
     </button>
   `).join('') + `
-    <button class="disaster-btn reset-btn" id="resetDisasterBtn">🔄 复位</button>
+    <button class="disaster-btn reset-btn" id="resetDisasterBtn">复位演示</button>
   `;
 
   // 绑定点击
@@ -1250,30 +1328,39 @@ async function refreshRoofRiskApiStatus() {
     const [payload, historyPayload, eventsPayload] = await Promise.all([
       currentResponse.json(), historyResponse.json(), eventsResponse.json(),
     ]);
-    latestRoofRiskApiPayload = payload;
+    liveRoofRiskApiPayload = payload;
     latestRoofRiskEventsPayload = eventsPayload;
     setText('apiVersion', payload.api_version ?? 'RoofRisk API v1');
     setText('apiDataSource', normalizeDataSourceLabel(payload.data_source));
     setText('apiEventId', payload.event_id ?? '--');
     setText('apiFaceId', payload.face_id ?? '--');
     const viewModel = mapRoofRiskViewModel(payload);
-    setText('enterpriseSourceName', payload.provenance?.source_name || 'teacher_roof_monitoring.csv');
-    setText('enterpriseRecordId', viewModel.provenance.recordId);
-    setText('enterpriseRecordTime', viewModel.provenance.timestamp);
-    setText('enterpriseDeviceId', viewModel.provenance.deviceId);
-    setText('enterpriseSourceHash', viewModel.provenance.hashShort);
-    renderExpertModel(viewModel);
-    refreshClosedLoop(payload);
+    if (!replayDisplayActive) {
+      latestRoofRiskApiPayload = liveRoofRiskApiPayload;
+      document.body.dataset.roofDataMode = 'live';
+      setText('enterpriseSourceName', payload.provenance?.source_name || 'teacher_roof_monitoring.csv');
+      setText('enterpriseRecordId', viewModel.provenance.recordId);
+      setText('enterpriseRecordTime', viewModel.provenance.timestamp);
+      setText('enterpriseDeviceId', viewModel.provenance.deviceId);
+      setText('enterpriseSourceHash', viewModel.provenance.hashShort);
+      renderExpertModel(viewModel);
+      refreshClosedLoop(payload);
+    }
     initPortalCharts();
-    updateRoofRiskCharts({ current: payload, history: historyPayload, events: eventsPayload });
+    if (!replayDisplayActive) {
+      updateRoofRiskCharts({ current: payload, history: historyPayload, events: eventsPayload });
+    }
     statusText.textContent = '接口在线';
     statusText.classList.remove('api-offline');
     await refreshRegulatorEvents(eventsPayload);
   } catch (error) {
-    latestRoofRiskApiPayload = null;
+    liveRoofRiskApiPayload = null;
     const unavailable = unavailableRoofRiskViewModel();
-    renderEnterpriseMetricSlots(unavailable);
-    renderExpertModel(unavailable);
+    if (!replayDisplayActive) {
+      latestRoofRiskApiPayload = null;
+      renderEnterpriseMetricSlots(unavailable);
+      renderExpertModel(unavailable);
+    }
     setText('apiDataSource', unavailable.provenance.source);
     setText('apiEventId', '--');
     setText('apiFaceId', '--');
@@ -1282,7 +1369,7 @@ async function refreshRoofRiskApiStatus() {
     setText('enterpriseRecordTime', '--');
     setText('enterpriseDeviceId', '--');
     setText('enterpriseSourceHash', '--');
-    clearRoofRiskCharts('真实数据接口暂不可用');
+    if (!replayDisplayActive) clearRoofRiskCharts('真实数据接口暂不可用');
     statusText.textContent = '接口离线';
     statusText.classList.add('api-offline');
     console.warn('RoofRisk API status unavailable:', error);
@@ -1334,7 +1421,7 @@ function gameLoop() {
 
 // ==================== 启动 ====================
 async function initApp(authenticatedUser) {
-  console.log('🚀 智慧矿山数字孪生综合管控平台 启动中...');
+  console.log('智慧矿山数字孪生综合管控平台启动中...');
 
   // 初始化灾害模块（注入场景特效）
   init(disasterEffects);
@@ -1373,7 +1460,7 @@ async function initApp(authenticatedUser) {
     disposeCharts();
   }, { once: true });
 
-  console.log('✅ 平台启动完成！');
+  console.log('平台启动完成。');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

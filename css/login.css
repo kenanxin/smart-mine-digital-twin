@@ -1,8 +1,3 @@
-@import url('https://cdn.jsdelivr.net/npm/@fontsource/chakra-petch@5.2.5/500.css');
-@import url('https://cdn.jsdelivr.net/npm/@fontsource/chakra-petch@5.2.5/600.css');
-@import url('https://cdn.jsdelivr.net/npm/@fontsource/chakra-petch@5.2.5/700.css');
-@import url('https://cdn.jsdelivr.net/npm/cn-fontsource-lxgw-wen-kai-screen@1.0.6/font.css');
-
 :root {
   color-scheme: dark;
   --graphite: #0b1117;
@@ -15,8 +10,8 @@
   --muted: #91a3ad;
   --danger: #ff6b64;
   --font-sans: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", sans-serif;
-  --font-data: "Chakra Petch", "Cascadia Mono", "Consolas", monospace;
-  --font-display: "LXGW WenKai Screen", "Microsoft YaHei", sans-serif;
+  --font-data: "Bahnschrift", "Cascadia Mono", "Consolas", monospace;
+  --font-display: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }

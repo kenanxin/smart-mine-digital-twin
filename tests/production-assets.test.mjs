@@ -41,3 +41,16 @@ test('production runtime assets retain their original binary signatures and size
     assert.equal(bytes.subarray(0, 4).toString('ascii'), 'glTF', `${url} is not a GLB`);
   }
 });
+
+test('all entry pages use offline-safe typography and dark browser chrome', () => {
+  for (const file of ['index.html', 'login.html', 'admin.html']) {
+    const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    assert.match(html, /name="color-scheme" content="dark"/);
+    assert.match(html, /name="theme-color" content="#10191e"/);
+  }
+  for (const file of ['css/style.css', 'css/login.css', 'css/admin.css']) {
+    const css = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    assert.doesNotMatch(css, /@import\s+url\(['"]?https?:\/\//);
+    assert.match(css, /Microsoft YaHei UI/);
+  }
+});

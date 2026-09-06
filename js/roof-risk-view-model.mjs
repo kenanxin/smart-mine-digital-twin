@@ -60,6 +60,11 @@ export function mapRoofRiskViewModel(payload) {
 
   const schema = sortFeatureSchema(Array.isArray(payload.feature_schema) ? payload.feature_schema : []);
   const schemaByKey = new Map(schema.map((item) => [item.key, item]));
+  const evidenceKeys = new Set(
+    Array.isArray(payload.feature_evidence)
+      ? payload.feature_evidence.map((item) => item?.key).filter(Boolean)
+      : [],
+  );
   const metrics = schema.map((item) => {
     const metric = payload.metrics?.[item.key] || {};
     const deviationSide = referenceDeviationSide(metric.value, item);
@@ -78,6 +83,7 @@ export function mapRoofRiskViewModel(payload) {
       referenceDirection: referenceDirection(item.key),
       referenceDeviationSide: deviationSide,
       isReferenceDeviation: deviationSide !== null,
+      isModelEvidence: evidenceKeys.has(item.key),
     };
   });
 
@@ -109,6 +115,7 @@ export function mapRoofRiskViewModel(payload) {
       labelAgreement: matches ? '预测与真实标签一致' : '预测与真实标签不一致',
       auditState: matches ? 'match' : 'mismatch',
       recordId: modelOutput.record_id || '--',
+      evidenceCount: Array.isArray(payload.feature_evidence) ? payload.feature_evidence.length : 0,
       probabilities,
     },
     provenance: {

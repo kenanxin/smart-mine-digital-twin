@@ -276,7 +276,7 @@ export function updateRoofRiskCharts({ current = {}, history = {}, events = {} }
   const setSummary = (id, value) => { const element = document.getElementById(id); if (element) element.textContent = value; };
   setSummary('thresholdSampleCount', trend.sampleCount ? `${trend.sampleCount} 条` : '--');
   setSummary('thresholdExceededCount', trend.exceededCount == null ? '待升级' : `${trend.exceededCount} 项`);
-  setSummary('thresholdPeakIndex', trend.peakIndex == null ? '--' : `${numberLabel(trend.peakIndex, 1)}${trend.mode === 'risk-score' ? ' 分' : '%'}`);
+  setSummary('thresholdPeakIndex', trend.peakIndex == null ? '峰值 --' : `峰值 ${numberLabel(trend.peakIndex, 1)}${trend.mode === 'risk-score' ? ' 分' : '%'}`);
   const options = {
     thresholdTrendChart: thresholdTrendOption(model),
     regulatorDistributionChart: distributionOption(model),

@@ -1909,9 +1909,9 @@ function setupCustomControls(container) {
       ? { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY }
       : { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY };
     if (tipEl) {
-      tipEl.innerHTML = m === 'rotate'
-        ? '🖱️ 左键旋转 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b style="color:#ffc95e">右键→平移模式</b>'
-        : '🖱️ 左键平移 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; <b style="color:#3fc9db">右键→旋转模式</b>';
+      tipEl.textContent = m === 'rotate'
+        ? '左键旋转 | 滚轮缩放 | 右键切换平移模式'
+        : '左键平移 | 滚轮缩放 | 右键切换旋转模式';
     }
   }
 

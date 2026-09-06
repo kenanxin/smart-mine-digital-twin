@@ -74,6 +74,21 @@ test('keeps metrics in fixed business order and marks low-side statistical devia
   assert.equal(distance.value, -10);
 });
 
+test('marks only metrics returned by XGBoost feature evidence as model evidence', () => {
+  const payload = structuredClone(samplePayload);
+  payload.feature_evidence = [
+    { key: 'support_resistance', label: '支架阻力' },
+    { key: 'microseismic_energy', label: '微震能量' },
+  ];
+  const view = mapRoofRiskViewModel(payload);
+  assert.deepEqual(
+    view.metrics.filter((metric) => metric.isModelEvidence).map((metric) => metric.key),
+    ['support_resistance', 'microseismic_energy'],
+  );
+  assert.equal(view.metrics.find((metric) => metric.key === 'roof_separation_rate').isModelEvidence, false);
+  assert.equal(view.model.evidenceCount, 2);
+});
+
 test('maps model probabilities in the fixed low-to-severe order', () => {
   const view = mapRoofRiskViewModel(samplePayload);
   assert.deepEqual(view.model.probabilities.map((item) => item.label), [
