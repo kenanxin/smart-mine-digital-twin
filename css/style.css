@@ -2972,10 +2972,13 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   display: grid;
   grid-template-columns: 154px minmax(0, 1fr);
   min-height: 920px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #3a3327;
   background: #0d1519;
   box-shadow: 0 18px 45px rgba(0, 0, 0, .25);
+}
+.expert-screen > .portal-grid.expert-grid {
+  margin-top: 6px;
 }
 .expert-research-nav {
   display: flex;
