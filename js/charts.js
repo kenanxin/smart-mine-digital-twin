@@ -1,4 +1,5 @@
 import { buildRoofRiskChartModel } from './roof-risk-chart-model.mjs';
+import { buildExpertResearchModel } from './expert-research-model.mjs';
 
 const CHART_IDS = [
   'thresholdTrendChart',
@@ -7,6 +8,12 @@ const CHART_IDS = [
   'expertProbabilityChart',
   'expertDeviationChart',
   'expertHistoryChart',
+  'expertDistributionChart',
+  'expertContributionChart',
+  'expertMechanismHeatmap',
+  'expertViolinChart',
+  'expertResearchTrendChart',
+  'expertClusterChart',
 ];
 
 const SERIES_COLORS = ['#32c7d9', '#f2b84b', '#50c878', '#d6e2e8', '#f05b5b', '#7fa4b8', '#a9c7d3'];
@@ -261,6 +268,98 @@ function deviationOption(model) {
   });
 }
 
+function researchDistributionOption(model) {
+  const source = model.distribution.map((item) => ({ ...item, value: item.count }));
+  return {
+    animationDuration: 240,
+    tooltip: { ...baseTooltip('item'), formatter: (params) => `${params.name}\n${numberLabel(params.value, 0)} 条 · ${numberLabel(params.data.percent, 1)}%` },
+    legend: { bottom: 0, left: 'center', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 9 } },
+    series: [{ type: 'pie', radius: ['44%', '72%'], center: ['50%', '45%'], avoidLabelOverlap: true, itemStyle: { borderColor: '#10191e', borderWidth: 2 }, label: { color: '#c8d6db', fontSize: 10, formatter: ({ name, percent }) => `${name}\n${percent}%` }, data: source.map((item) => ({ name: item.label, value: item.value, percent: item.percent, itemStyle: { color: item.color } })) }],
+  };
+}
+
+function researchContributionOption(model) {
+  return horizontalBarOption(model.contributions.slice(0, 7).map((item) => ({ label: item.label, value: item.contribution, contribution: item.contribution, unit: item.unit })), {
+    valueKey: 'value', valueMax: (value) => Math.max(1, value.max * 1.25), color: '#e8a94a',
+    labelFormatter: (params) => numberLabel(params.value.value, 3),
+    tooltipFormatter: (params) => `${params.value.label}\n贡献度 ${numberLabel(params.value.value, 3)}`,
+  });
+}
+
+function researchHeatmapOption(model) {
+  const labels = model.schema.map((item) => item.label);
+  if (!labels.length) return { series: [], graphic: emptyGraphic('暂无机理关联数据') };
+  return {
+    animationDuration: 240,
+    grid: { left: 82, right: 12, top: 8, bottom: 62 },
+    tooltip: { ...baseTooltip('item'), formatter: (params) => `${labels[params.value[1]]} × ${labels[params.value[0]]}\nr = ${numberLabel(params.value[2], 3)}` },
+    xAxis: { type: 'category', data: labels, axisLabel: { rotate: 38, fontSize: 9 } },
+    yAxis: { type: 'category', data: labels, axisLabel: { fontSize: 9 } },
+    visualMap: { min: -1, max: 1, calculable: false, orient: 'horizontal', left: 'center', bottom: 4, itemWidth: 10, itemHeight: 90, inRange: { color: ['#2d6fa3', '#16242b', '#c94d4d'] }, textStyle: { color: '#81949e', fontSize: 9 } },
+    series: [{ type: 'heatmap', data: model.heatmap.flat().map((cell) => [cell.x, cell.y, cell.value]), label: { show: true, color: '#e8f1f5', fontSize: 9, formatter: ({ value }) => Number(value[2]).toFixed(2) }, emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,.5)' } } }],
+  };
+}
+
+function researchViolinOption(model) {
+  const labels = model.violins.map((item) => item.label);
+  if (!model.violins.length || model.violins.every((item) => !item.values.length)) return { series: [], graphic: emptyGraphic('暂无历史分布数据') };
+  const yMin = Math.floor(Math.min(...model.violins.map((item) => item.min).filter(Number.isFinite)) - 0.25);
+  const yMax = Math.ceil(Math.max(...model.violins.map((item) => item.max).filter(Number.isFinite)) + 0.25);
+  return {
+    animationDuration: 240,
+    grid: { left: 44, right: 18, top: 18, bottom: 66 },
+    tooltip: { ...baseTooltip('item'), formatter: (params) => { const item = model.violins[params.dataIndex]; return `${item.label}\n最大 ${numberLabel(item.max)}\nQ3 ${numberLabel(item.q3)}\n中位数 ${numberLabel(item.median)}\nQ1 ${numberLabel(item.q1)}\n最小 ${numberLabel(item.min)}`; } },
+    xAxis: { type: 'category', data: labels, axisLabel: { rotate: 38, fontSize: 9 } },
+    yAxis: { type: 'value', min: yMin, max: yMax, name: '标准化值', nameTextStyle: { fontSize: 9, color: '#81949e' }, splitLine: { lineStyle: { color: '#26343b', type: 'dashed' } } },
+    series: [{
+      type: 'custom',
+      renderItem(params, api) {
+        const item = model.violins[params.dataIndex];
+        const density = item.density || [];
+        if (!density.length || !Number.isFinite(item.min) || !Number.isFinite(item.max)) return null;
+        const points = [];
+        density.forEach((value, index) => {
+          const y = item.min + ((item.max - item.min) * index) / Math.max(1, density.length - 1);
+          const centerX = api.coord([params.dataIndex, y])[0];
+          points.push([centerX - (value * 24), api.coord([params.dataIndex, y])[1]]);
+        });
+        for (let index = density.length - 1; index >= 0; index -= 1) {
+          const y = item.min + ((item.max - item.min) * index) / Math.max(1, density.length - 1);
+          const centerX = api.coord([params.dataIndex, y])[0];
+          points.push([centerX + (density[index] * 24), api.coord([params.dataIndex, y])[1]]);
+        }
+        return { type: 'polygon', shape: { points }, style: { fill: 'rgba(50,199,217,.28)', stroke: '#32c7d9', lineWidth: 1 } };
+      },
+      data: model.violins.map((_item, index) => ({ value: [index, 0] })),
+    }],
+  };
+}
+
+function researchTrendOption(model) {
+  if (!model.trend.length) return { series: [], graphic: emptyGraphic('暂无历史趋势数据') };
+  return {
+    animationDuration: 240,
+    grid: { left: 42, right: 18, top: 18, bottom: 28 },
+    tooltip: { ...baseTooltip('axis'), formatter: (params) => `${params[0]?.axisValue || ''}\n综合风险 ${numberLabel(params[0]?.value?.[1], 0)} 分` },
+    xAxis: { type: 'category', data: model.trend.map((item) => item.timestamp.slice(5, 16)), axisLabel: { hideOverlap: true, fontSize: 9 } },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { fontSize: 9 }, splitLine: { lineStyle: { color: '#26343b', type: 'dashed' } } },
+    series: [{ type: 'line', smooth: 0.25, showSymbol: false, data: model.trend.map((item) => [item.timestamp.slice(5, 16), item.score]), lineStyle: { color: '#ef8f4e', width: 2 }, areaStyle: { color: 'rgba(239,143,78,.13)' }, markLine: { silent: true, symbol: 'none', lineStyle: { color: '#f05b5b', type: 'dashed' }, data: [{ yAxis: 70 }] } }],
+  };
+}
+
+function researchClusterOption(model) {
+  if (!model.clusters.length) return { series: [], graphic: emptyGraphic('暂无分群数据') };
+  const colors = { green: '#50c878', yellow: '#f2b84b', orange: '#ef8f4e', red: '#f05b5b' };
+  return {
+    animationDuration: 240,
+    grid: { left: 46, right: 18, top: 18, bottom: 34 },
+    tooltip: { ...baseTooltip('item'), formatter: (params) => `离层 ${numberLabel(params.value[0])}\n支架阻力 ${numberLabel(params.value[1])}\n风险分 ${numberLabel(params.value[2], 0)}` },
+    xAxis: { type: 'value', name: '离层', nameTextStyle: { fontSize: 9 }, axisLabel: { fontSize: 9 } },
+    yAxis: { type: 'value', name: '支架阻力', nameTextStyle: { fontSize: 9 }, axisLabel: { fontSize: 9 } },
+    series: [{ type: 'scatter', symbolSize: (value) => Math.max(6, Math.min(18, Number(value[2]) / 6)), data: model.clusters.map((item) => ({ value: item.value, itemStyle: { color: colors[item.riskLevel] || '#32c7d9', opacity: 0.82 } })) }],
+  };
+}
+
 export function initPortalCharts() {
   CHART_IDS.forEach(initChart);
   return chartInstances;
@@ -268,6 +367,7 @@ export function initPortalCharts() {
 
 export function updateRoofRiskCharts({ current = {}, history = {}, events = {} } = {}) {
   const model = buildRoofRiskChartModel(current, history, events);
+  const research = buildExpertResearchModel({ current, history, events });
   const title = document.getElementById('thresholdTrendTitle');
   const hint = document.getElementById('thresholdTrendHint');
   if (title) title.textContent = '当前记录 · XGBoost 风险概率';
@@ -278,6 +378,12 @@ export function updateRoofRiskCharts({ current = {}, history = {}, events = {} }
     expertProbabilityChart: probabilityOption(model),
     expertDeviationChart: deviationOption(model),
     expertHistoryChart: thresholdTrendOption(model),
+    expertDistributionChart: researchDistributionOption(research),
+    expertContributionChart: researchContributionOption(research),
+    expertMechanismHeatmap: researchHeatmapOption(research),
+    expertViolinChart: researchViolinOption(research),
+    expertResearchTrendChart: researchTrendOption(research),
+    expertClusterChart: researchClusterOption(research),
   };
 
   Object.entries(options).forEach(([domId, option]) => {
@@ -287,7 +393,27 @@ export function updateRoofRiskCharts({ current = {}, history = {}, events = {} }
     const nextSeries = option.series?.length || 0;
     chart.setOption(option, { notMerge: currentSeries !== nextSeries });
   });
+  renderExpertResearchSummary(research, current);
   return model;
+}
+
+function renderExpertResearchSummary(model, current) {
+  const labels = { green: '低风险', yellow: '一般风险', orange: '较大风险', red: '重大风险' };
+  const set = (id, value) => { const element = document.getElementById(id); if (element) element.textContent = value; };
+  set('expertResearchSource', model.sourceName);
+  set('researchRiskLevel', labels[model.riskLevel] || '--');
+  set('researchRiskScore', Number.isFinite(model.currentScore) ? `综合风险 ${numberLabel(model.currentScore, 0)} 分` : '综合风险 --');
+  set('researchConfidence', Number.isFinite(Number(current.model_output?.confidence)) ? `${numberLabel(Number(current.model_output.confidence) * 100, 2)}%` : '--');
+  set('researchModelName', `${String(current.model_output?.best_model || 'XGBoost').toUpperCase()} · ${current.model_output?.predicted_class || '--'}`);
+  set('researchSampleCount', model.sampleCount ? numberLabel(model.sampleCount, 0) : '--');
+  set('researchSourceName', model.sourceName);
+  set('researchEvidenceCount', `${model.explanation.evidence.length} 项`);
+  set('researchAccuracy', Number.isFinite(model.modelAccuracy) ? `${numberLabel(model.modelAccuracy * 100, 2)}%` : '--');
+  set('researchF1', Number.isFinite(model.modelMacroF1) ? `Macro-F1 ${(model.modelMacroF1 * 100).toFixed(2)}%` : 'Macro-F1 --');
+  set('researchEvidenceText', model.explanation.evidence.map((item) => `${item.label}（贡献 ${numberLabel(item.contribution, 3)}）`).join('、') || '暂无当前记录证据');
+  set('researchRuleText', model.explanation.rule);
+  set('researchMechanismText', model.explanation.mechanism);
+  set('researchConclusionText', model.explanation.conclusion);
 }
 
 export function updateReplayChart({ current = {}, history = {} } = {}) {

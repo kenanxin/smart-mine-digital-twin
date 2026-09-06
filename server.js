@@ -16,6 +16,7 @@ const {
   serializeSessionCookie,
 } = require('./server/auth-service.js');
 const { createSupabaseAuthService } = require('./server/supabase-auth-service.js');
+const { createExpertAdviceService } = require('./server/expert-advice-service.js');
 
 const ROOT = __dirname;
 const DEFAULT_ARTIFACT_PATH = path.join(ROOT, 'data', 'roof-risk-dataset.json');
@@ -183,6 +184,7 @@ function createAppServer(options = {}) {
       serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     })
     : createAuthService());
+  const expertAdviceService = options.expertAdviceService || createExpertAdviceService();
 
   return http.createServer(async (req, res) => {
     const requestUrl = new URL(req.url, 'http://localhost');
@@ -360,6 +362,18 @@ function createAppServer(options = {}) {
       if (pathname === '/api/roof-risk/explain') {
         assertMethod(req, ['GET']);
         sendJson(res, repository.getExplain());
+        return;
+      }
+
+      if (pathname === '/api/roof-risk/expert-advice') {
+        assertMethod(req, ['POST']);
+        if (!['expert', 'super_admin'].includes(session.user.role)) {
+          sendApiError(res, 403, 'FORBIDDEN', '仅智库端专家可生成专家建议', { role: session.user.role });
+          return;
+        }
+        const body = await readJsonBody(req);
+        const result = await expertAdviceService.generate(body);
+        sendJson(res, result);
         return;
       }
 

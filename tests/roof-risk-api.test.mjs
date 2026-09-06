@@ -54,6 +54,22 @@ test('current endpoint exposes real source, eight metrics, and XGBoost output', 
   });
 });
 
+test('expert advice endpoint returns local fallback without an API key', async () => {
+  await withServer(async (baseUrl) => {
+    const cookie = await loginAs(baseUrl, 'expert_analyst', 'Model@2026');
+    const current = await requestJson(`${baseUrl}/api/roof-risk/current`, {}, cookie);
+    const advice = await requestJson(`${baseUrl}/api/roof-risk/expert-advice`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ risk: current.payload.risk, evidence: current.payload.feature_evidence, closed_loop: current.payload.closed_loop }),
+    }, cookie);
+    assert.equal(advice.response.status, 200);
+    assert.equal(advice.payload.source, 'local-rule');
+    assert.ok(Array.isArray(advice.payload.recommendations));
+    assert.match(advice.payload.summary, /综合风险/);
+  }, { authenticate: false });
+});
+
 test('portal query URL serves the application without redirecting to itself', async () => {
   await withServer(async (baseUrl, cookie) => {
     const response = await fetch(`${baseUrl}/?scene=v2&view=underground&field=risk&portal=expert`, {

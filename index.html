@@ -388,6 +388,60 @@
     </div>
   </div>
 
+  <section class="expert-research-console" aria-label="智库端科研分析大屏">
+    <nav class="expert-research-nav" id="expertResearchNav" aria-label="科研分析导航">
+      <span class="research-nav-brand">ROOF LAB <em>01</em></span>
+      <a href="#expertResearchSummary">数据概览</a>
+      <a href="#expertMechanismHeatmap">机理关联</a>
+      <a href="#expertViolinChart">分布研究</a>
+      <a href="#expertExplanation">模型解释</a>
+      <a href="#expertAdvicePanel">专家建议</a>
+      <span class="research-nav-source">REAL CSV<br><b id="expertResearchSource">读取中</b></span>
+    </nav>
+    <div class="expert-research-main">
+      <div class="expert-research-titlebar">
+        <div>
+          <span class="research-eyebrow">RESEARCH CONSOLE · ROOF DISASTER MECHANISM</span>
+          <h3>煤矿顶板灾变智库端风险机理分析平台</h3>
+          <p>基于老师真实监测数据的模型解释、风险机理关联与专家研判工作台</p>
+        </div>
+        <div class="research-live-status"><i></i><span id="expertResearchMode">本地专家规则</span><b id="expertResearchUpdated">--</b></div>
+      </div>
+      <div class="expert-research-summary" id="expertResearchSummary">
+        <div class="research-stat risk-stat"><span>当前风险等级</span><b id="researchRiskLevel">--</b><em id="researchRiskScore">综合风险 --</em></div>
+        <div class="research-stat"><span>模型置信度</span><b id="researchConfidence">--</b><em id="researchModelName">XGBoost</em></div>
+        <div class="research-stat"><span>真实样本量</span><b id="researchSampleCount">--</b><em id="researchSourceName">teacher_roof_monitoring.csv</em></div>
+        <div class="research-stat"><span>异常证据项</span><b id="researchEvidenceCount">--</b><em>当前记录标准化偏离</em></div>
+        <div class="research-stat"><span>模型准确率</span><b id="researchAccuracy">--</b><em id="researchF1">Macro-F1 --</em></div>
+      </div>
+      <div class="expert-research-grid">
+        <section class="research-panel panel-distribution"><header><strong>风险等级分布</strong><span>全量真实样本</span></header><div class="research-chart" id="expertDistributionChart" role="img" aria-label="老师真实数据风险等级分布"></div></section>
+        <section class="research-panel panel-contribution"><header><strong>指标贡献度</strong><span>当前记录证据排序</span></header><div class="research-chart" id="expertContributionChart" role="img" aria-label="当前风险指标贡献度"></div></section>
+        <section class="research-panel panel-heatmap"><header><strong>风险机理关联热力图</strong><span>标准化指标 Pearson r</span></header><div class="research-chart" id="expertMechanismHeatmap" role="img" aria-label="标准化指标风险机理关联热力图"></div></section>
+        <section class="research-panel panel-violin"><header><strong>指标分布小提琴图</strong><span>历史窗口 · 标准化值</span></header><div class="research-chart" id="expertViolinChart" role="img" aria-label="历史窗口指标标准化分布小提琴图"></div></section>
+        <section class="research-panel panel-trend"><header><strong>风险指数演化</strong><span>真实历史窗口</span></header><div class="research-chart" id="expertResearchTrendChart" role="img" aria-label="真实历史风险指数趋势"></div></section>
+        <section class="research-panel panel-cluster"><header><strong>样本分群观察</strong><span>离层 × 支架阻力 × 风险分</span></header><div class="research-chart" id="expertClusterChart" role="img" aria-label="真实样本风险分群散点图"></div></section>
+      </div>
+      <section class="research-lower-grid">
+        <article class="research-explanation" id="expertExplanation">
+          <header><div><span class="research-eyebrow">MODEL INTERPRETATION</span><strong>风险机理解释</strong></div><span class="research-source-badge" id="expertExplanationSource">本地规则</span></header>
+          <div class="explanation-layers">
+            <div><b>数据证据</b><p id="researchEvidenceText">等待真实数据。</p></div>
+            <div><b>模型判别</b><p id="researchRuleText">等待 XGBoost 输出。</p></div>
+            <div><b>风险机理</b><p id="researchMechanismText">等待指标关联分析。</p></div>
+            <div><b>研究结论</b><p id="researchConclusionText">等待研究结论。</p></div>
+          </div>
+        </article>
+        <article class="research-advice" id="expertAdvicePanel">
+          <header><div><span class="research-eyebrow">EXPERT ADVICE</span><strong>专家建议生成器</strong></div><button id="generateExpertAdvice" type="button">生成建议</button></header>
+          <div class="advice-meta"><span id="expertAdviceSource">未生成</span><span id="expertAdviceTime">--</span></div>
+          <div class="advice-result" id="expertAdviceResult"><strong>建议尚未生成</strong><p>点击“生成建议”，系统将基于当前真实记录、模型证据和闭环状态生成可追溯的专家建议。</p></div>
+          <button class="advice-copy" id="copyExpertAdvice" type="button" disabled>复制建议文本</button>
+        </article>
+      </section>
+    </div>
+  </section>
+
   <div class="portal-grid expert-grid">
     <section class="portal-card">
       <div class="portal-card-head">

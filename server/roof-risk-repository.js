@@ -228,6 +228,7 @@ function createRoofRiskRepository(artifact) {
       metrics[feature.key] = {
         value: record.values[index],
         model_value: record.model_values?.[index] ?? record.values[index],
+        standardized_value: record.standardized_values[index],
         unit: feature.unit,
         status: metricStatus(record.standardized_values[index]),
       };
@@ -480,6 +481,13 @@ function createRoofRiskRepository(artifact) {
         record_id: event.recordId,
         feature_schema: artifact.feature_schema,
         points,
+        analytics: {
+          sampleCount: artifact.source.row_count,
+          sourceName: artifact.source.name,
+          classDistribution: artifact.source.class_distribution,
+          modelAccuracy: artifact.model.accuracy,
+          modelMacroF1: artifact.model.macro_f1,
+        },
         provenance: provenanceFor(getRecord(event.recordId)),
       };
     },

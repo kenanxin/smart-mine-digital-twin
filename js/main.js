@@ -17,6 +17,7 @@ let roofDemoTimer = null;
 let roofDemoIndex = -1;
 let roofDemoPlaying = false;
 let latestRoofRiskApiPayload = null;
+let latestRoofRiskHistoryPayload = null;
 let liveRoofRiskApiPayload = null;
 let replayRoofRiskApiPayload = null;
 let replayRoofRiskFrame = null;
@@ -1343,6 +1344,7 @@ async function refreshRoofRiskApiStatus() {
       currentResponse.json(), historyResponse.json(), eventsResponse.json(),
     ]);
     liveRoofRiskApiPayload = payload;
+    latestRoofRiskHistoryPayload = historyPayload;
     latestRoofRiskEventsPayload = eventsPayload;
     setText('apiVersion', payload.api_version ?? 'RoofRisk API v1');
     setText('apiDataSource', normalizeDataSourceLabel(payload.data_source));
@@ -1419,6 +1421,74 @@ function setupClosedLoopActions() {
   });
 }
 
+function setExpertAdviceResult(result) {
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const sourceLabel = result.source === 'deepseek' ? 'DeepSeek AI' : '本地专家规则';
+  const source = document.getElementById('expertAdviceSource');
+  const time = document.getElementById('expertAdviceTime');
+  const resultPanel = document.getElementById('expertAdviceResult');
+  const copy = document.getElementById('copyExpertAdvice');
+  const sourceBadge = document.getElementById('expertExplanationSource');
+  const text = [
+    `风险等级：${result.riskLevel}`,
+    `建议时效：${result.timeHorizon}`,
+    `分析摘要：${result.summary}`,
+    `依据：${(result.evidence || []).join('、') || '当前记录暂无额外证据'}`,
+    `专家建议：${(result.recommendations || []).map((item, index) => `${index + 1}. ${item}`).join(' ')}`,
+  ].join('\n');
+  if (source) source.textContent = sourceLabel;
+  if (time) time.textContent = result.generatedAt ? new Date(result.generatedAt).toLocaleString('zh-CN', { hour12: false }) : '--';
+  if (sourceBadge) sourceBadge.textContent = sourceLabel;
+  if (resultPanel) {
+    resultPanel.innerHTML = `<strong>${escapeHtml(result.riskLevel)} · ${escapeHtml(result.timeHorizon)}</strong><p>${escapeHtml(result.summary)}</p><ul>${(result.recommendations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+  }
+  if (copy) { copy.disabled = false; copy.dataset.copyText = text; }
+}
+
+async function generateExpertAdvice() {
+  const button = document.getElementById('generateExpertAdvice');
+  if (!button || !latestRoofRiskApiPayload) return;
+  button.disabled = true;
+  button.textContent = '分析中…';
+  try {
+    const payload = latestRoofRiskApiPayload;
+    const response = await authFetch('/api/roof-risk/expert-advice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recordId: payload.provenance?.record_id,
+        timestamp: payload.provenance?.original_timestamp,
+        risk: payload.risk,
+        model: payload.model_output,
+        evidence: payload.feature_evidence,
+        closed_loop: payload.closed_loop,
+      }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    setExpertAdviceResult(await response.json());
+  } catch (error) {
+    const fallback = document.getElementById('expertAdviceResult');
+    if (fallback) fallback.innerHTML = '<strong>建议生成失败</strong><p>当前无法连接建议服务，请稍后重试。已有模型解释仍可使用。</p>';
+    console.warn('Expert advice generation failed:', error);
+  } finally {
+    button.disabled = false;
+    button.textContent = '生成建议';
+  }
+}
+
+function setupExpertResearchActions() {
+  document.getElementById('generateExpertAdvice')?.addEventListener('click', generateExpertAdvice);
+  document.getElementById('copyExpertAdvice')?.addEventListener('click', async (event) => {
+    const text = event.currentTarget.dataset.copyText;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      event.currentTarget.textContent = '已复制';
+      setTimeout(() => { event.currentTarget.textContent = '复制建议文本'; }, 1400);
+    } catch { event.currentTarget.textContent = '复制失败'; }
+  });
+}
+
 // ==================== 窗口响应 ====================
 function onResize() { resizeCharts(); }
 
@@ -1452,6 +1522,7 @@ async function initApp(authenticatedUser) {
   setupViewToggle();
   setupRoofFieldControls();
   setupClosedLoopActions();
+  setupExpertResearchActions();
   setupDisasterPanel();
   setupEquipmentFocus();
   await refreshRoofRiskApiStatus();

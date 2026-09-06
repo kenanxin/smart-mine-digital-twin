@@ -25,6 +25,9 @@ test('regulator and expert portals expose role-specific chart work surfaces', ()
   assert.match(html, /id="expertProbabilityChart"/);
   assert.match(html, /id="expertDeviationChart"/);
   assert.match(html, /id="expertHistoryChart"/);
+  assert.match(html, /id="expertMechanismHeatmap"/);
+  assert.match(html, /id="expertViolinChart"/);
+  assert.match(html, /id="generateExpertAdvice"/);
   assert.match(html, /标准化偏离/);
   assert.doesNotMatch(html, /特征贡献/);
 });
