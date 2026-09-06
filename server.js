@@ -342,6 +342,12 @@ function createAppServer(options = {}) {
         return;
       }
 
+      if (pathname === '/api/roof-risk/research-analytics') {
+        assertMethod(req, ['GET']);
+        sendJson(res, repository.getResearchAnalytics());
+        return;
+      }
+
       if (pathname === '/api/roof-risk/replay/meta') {
         assertMethod(req, ['GET']);
         sendJson(res, repository.getReplayMeta());
@@ -371,9 +377,19 @@ function createAppServer(options = {}) {
           sendApiError(res, 403, 'FORBIDDEN', '仅智库端专家可生成专家建议', { role: session.user.role });
           return;
         }
+        if (!expertAdviceService.configured) {
+          sendApiError(res, 503, 'DEEPSEEK_NOT_CONFIGURED', 'DeepSeek API 尚未配置，请在服务端设置 DEEPSEEK_API_KEY');
+          return;
+        }
         const body = await readJsonBody(req);
         const result = await expertAdviceService.generate(body);
         sendJson(res, result);
+        return;
+      }
+
+      if (pathname === '/api/roof-risk/expert-advice/status') {
+        assertMethod(req, ['GET']);
+        sendJson(res, { configured: Boolean(expertAdviceService.configured), source: expertAdviceService.configured ? 'deepseek' : 'unconfigured' });
         return;
       }
 

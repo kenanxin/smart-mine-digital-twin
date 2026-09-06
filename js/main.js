@@ -1332,16 +1332,18 @@ async function refreshRoofRiskApiStatus() {
   const statusText = document.getElementById('apiStatusText');
   if (!statusText) return;
   try {
-    const [currentResponse, historyResponse, eventsResponse] = await Promise.all([
+    const [currentResponse, historyResponse, eventsResponse, analyticsResponse] = await Promise.all([
       authFetch('/api/roof-risk/current', { cache: 'no-store' }),
       authFetch('/api/roof-risk/history', { cache: 'no-store' }),
       authFetch('/api/roof-risk/events', { cache: 'no-store' }),
+      authFetch('/api/roof-risk/research-analytics', { cache: 'no-store' }),
     ]);
-    if (!currentResponse.ok || !historyResponse.ok || !eventsResponse.ok) {
-      throw new Error(`HTTP ${currentResponse.status}/${historyResponse.status}/${eventsResponse.status}`);
+    if (!currentResponse.ok || !historyResponse.ok || !eventsResponse.ok || !analyticsResponse.ok) {
+      throw new Error(`HTTP ${currentResponse.status}/${historyResponse.status}/${eventsResponse.status}/${analyticsResponse.status}`);
     }
-    const [payload, historyPayload, eventsPayload] = await Promise.all([
+    const [payload, historyPayload, eventsPayload, analyticsPayload] = await Promise.all([
       currentResponse.json(), historyResponse.json(), eventsResponse.json(),
+      analyticsResponse.json(),
     ]);
     liveRoofRiskApiPayload = payload;
     latestRoofRiskHistoryPayload = historyPayload;
@@ -1366,7 +1368,7 @@ async function refreshRoofRiskApiStatus() {
     }
     initPortalCharts();
     if (!replayDisplayActive) {
-      updateRoofRiskCharts({ current: payload, history: historyPayload, events: eventsPayload });
+      updateRoofRiskCharts({ current: payload, history: historyPayload, events: eventsPayload, analytics: analyticsPayload });
     }
     statusText.textContent = '接口在线';
     statusText.classList.remove('api-offline');
@@ -1489,6 +1491,27 @@ function setupExpertResearchActions() {
   });
 }
 
+async function refreshExpertAdviceStatus() {
+  const button = document.getElementById('generateExpertAdvice');
+  const source = document.getElementById('expertAdviceSource');
+  const result = document.getElementById('expertAdviceResult');
+  if (!button) return;
+  try {
+    const response = await authFetch('/api/roof-risk/expert-advice/status', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const status = await response.json();
+    button.disabled = !status.configured;
+    button.textContent = status.configured ? '生成 DeepSeek 建议' : '需配置 DeepSeek';
+    if (source) source.textContent = status.configured ? 'DeepSeek 已就绪' : 'DeepSeek 未配置';
+    if (!status.configured && result) result.innerHTML = '<strong>DeepSeek API 未配置</strong><p>当前仅展示真实数据和模型解释。配置服务端 DEEPSEEK_API_KEY 后，才会生成 AI 专家建议。</p>';
+  } catch (error) {
+    button.disabled = true;
+    button.textContent = 'DeepSeek 不可用';
+    if (source) source.textContent = '接口状态未知';
+    console.warn('Expert advice status unavailable:', error);
+  }
+}
+
 // ==================== 窗口响应 ====================
 function onResize() { resizeCharts(); }
 
@@ -1523,6 +1546,7 @@ async function initApp(authenticatedUser) {
   setupRoofFieldControls();
   setupClosedLoopActions();
   setupExpertResearchActions();
+  refreshExpertAdviceStatus();
   setupDisasterPanel();
   setupEquipmentFocus();
   await refreshRoofRiskApiStatus();

@@ -57,12 +57,13 @@ function buildHistoryRows(history, schema) {
   }));
 }
 
-export function buildExpertResearchModel({ current = {}, history = {}, events = {} } = {}) {
+export function buildExpertResearchModel({ current = {}, history = {}, events = {}, analytics = {} } = {}) {
   const schema = featureSchema(current, history);
   const rows = buildHistoryRows(history, schema);
   const currentRows = currentFeatureRows(current, schema);
-  const sampleCount = Number(history?.analytics?.sampleCount || history?.provenance?.source_row_count || rows.length);
-  const classDistribution = history?.analytics?.classDistribution || {};
+  const sourceAnalytics = analytics?.sampleCount ? analytics : (history?.analytics || {});
+  const sampleCount = Number(sourceAnalytics.sampleCount || history?.provenance?.source_row_count || rows.length);
+  const classDistribution = sourceAnalytics.classDistribution || {};
   const distribution = RISK_META.map(([key, label, color]) => ({
     key,
     label,
@@ -83,9 +84,9 @@ export function buildExpertResearchModel({ current = {}, history = {}, events = 
   const heatmap = schema.map((rowFeature, rowIndex) => schema.map((columnFeature, columnIndex) => ({
     x: columnIndex,
     y: rowIndex,
-    value: rowIndex === columnIndex
+    value: sourceAnalytics.correlations?.[rowIndex]?.[columnIndex] ?? (rowIndex === columnIndex
       ? 1
-      : correlation(rows.map((row) => row[rowIndex]?.standardized), rows.map((row) => row[columnIndex]?.standardized)),
+      : correlation(rows.map((row) => row[rowIndex]?.standardized), rows.map((row) => row[columnIndex]?.standardized))),
   })));
 
   const violins = schema.map((feature, index) => {
@@ -107,20 +108,21 @@ export function buildExpertResearchModel({ current = {}, history = {}, events = 
       const right = bins[bin + 1] || 0;
       return round((left + value * 2 + right) / (maxDensity * 4), 3);
     });
+    const sourceDistribution = sourceAnalytics.distributions?.[index];
     return {
       key: feature.key,
       label: feature.label || feature.key,
       values,
-      min,
-      q1: percentile(values, 0.25),
-      median: percentile(values, 0.5),
-      q3: percentile(values, 0.75),
-      max: percentile(values, 1),
-      density,
+      min: sourceDistribution?.min ?? min,
+      q1: sourceDistribution?.q1 ?? percentile(values, 0.25),
+      median: sourceDistribution?.median ?? percentile(values, 0.5),
+      q3: sourceDistribution?.q3 ?? percentile(values, 0.75),
+      max: sourceDistribution?.max ?? percentile(values, 1),
+      density: sourceDistribution?.density ?? density,
     };
   });
 
-  const trend = (history?.points || []).map((point) => ({
+  const trend = (sourceAnalytics.trend || (history?.points || [])).map((point) => ({
     timestamp: point.timestamp,
     score: Number(point.score),
     level: point.level,
@@ -152,9 +154,9 @@ export function buildExpertResearchModel({ current = {}, history = {}, events = 
 
   return {
     sampleCount,
-    sourceName: history?.analytics?.sourceName || history?.provenance?.source_name || 'teacher_roof_monitoring.csv',
-    modelAccuracy: Number(history?.analytics?.modelAccuracy),
-    modelMacroF1: Number(history?.analytics?.modelMacroF1),
+    sourceName: sourceAnalytics.sourceName || history?.provenance?.source_name || 'teacher_roof_monitoring.csv',
+    modelAccuracy: Number(sourceAnalytics.modelAccuracy),
+    modelMacroF1: Number(sourceAnalytics.modelMacroF1),
     riskLevel,
     currentScore,
     schema,
@@ -164,6 +166,7 @@ export function buildExpertResearchModel({ current = {}, history = {}, events = 
     violins,
     trend,
     clusters,
+    currentProfile: currentRows.map((item) => ({ label: item.label, value: Number.isFinite(item.standardized) ? round(item.standardized, 3) : 0 })),
     explanation,
   };
 }

@@ -160,6 +160,53 @@ function createRoofRiskRepository(artifact) {
   const eventByLabel = new Map();
   const loopProgress = new Map();
 
+  function buildResearchAnalytics() {
+    const featureCount = 7;
+    const labels = artifact.feature_schema.slice(0, featureCount).map((feature) => feature.label || feature.key);
+    const columns = Array.from({ length: featureCount }, (_, index) => artifact.records.map((record) => Number(record.standardized_values[index])));
+    const quantile = (values, ratio) => {
+      const sorted = [...values].sort((a, b) => a - b);
+      const position = (sorted.length - 1) * ratio;
+      const lower = Math.floor(position);
+      const upper = Math.ceil(position);
+      return Number((sorted[lower] + ((sorted[upper] - sorted[lower]) * (position - lower))).toFixed(3));
+    };
+    const correlation = (left, right) => {
+      const leftMean = left.reduce((sum, value) => sum + value, 0) / left.length;
+      const rightMean = right.reduce((sum, value) => sum + value, 0) / right.length;
+      const numerator = left.reduce((sum, value, index) => sum + ((value - leftMean) * (right[index] - rightMean)), 0);
+      const leftVariance = left.reduce((sum, value) => sum + ((value - leftMean) ** 2), 0);
+      const rightVariance = right.reduce((sum, value) => sum + ((value - rightMean) ** 2), 0);
+      return leftVariance && rightVariance ? Number((numerator / Math.sqrt(leftVariance * rightVariance)).toFixed(3)) : 0;
+    };
+    const distributions = columns.map((values) => {
+      const min = quantile(values, 0);
+      const max = quantile(values, 1);
+      const bins = Array.from({ length: 25 }, () => 0);
+      const span = max - min || 1;
+      values.forEach((value) => { bins[Math.max(0, Math.min(24, Math.floor(((value - min) / span) * 25)))] += 1; });
+      const peak = Math.max(...bins, 1);
+      return {
+        min,
+        q1: quantile(values, 0.25),
+        median: quantile(values, 0.5),
+        q3: quantile(values, 0.75),
+        max,
+        density: bins.map((value, index) => Number(((value + (bins[index - 1] || 0) + (bins[index + 1] || 0)) / (peak * 3)).toFixed(3))),
+      };
+    });
+    const correlations = columns.map((column) => columns.map((other) => correlation(column, other)));
+    const bucketSize = Math.ceil(artifact.records.length / 120);
+    const trend = [];
+    for (let start = 0; start < artifact.records.length; start += bucketSize) {
+      const bucket = replayRecords.slice(start, start + bucketSize);
+      trend.push({ timestamp: bucket[Math.floor(bucket.length / 2)]?.time, score: Number((bucket.reduce((sum, record) => sum + Number(record.risk_score), 0) / bucket.length).toFixed(2)), count: bucket.length });
+    }
+    return { sampleCount: artifact.source.row_count, sourceName: artifact.source.name, classDistribution: artifact.source.class_distribution, labels, distributions, correlations, trend, modelAccuracy: artifact.model.accuracy, modelMacroF1: artifact.model.macro_f1 };
+  }
+
+  const researchAnalytics = buildResearchAnalytics();
+
   for (const [label, meta] of Object.entries(RISK_META)) {
     const recordId = artifact.representatives[label];
     const event = { ...meta, trueClass: label, recordId };
@@ -481,13 +528,7 @@ function createRoofRiskRepository(artifact) {
         record_id: event.recordId,
         feature_schema: artifact.feature_schema,
         points,
-        analytics: {
-          sampleCount: artifact.source.row_count,
-          sourceName: artifact.source.name,
-          classDistribution: artifact.source.class_distribution,
-          modelAccuracy: artifact.model.accuracy,
-          modelMacroF1: artifact.model.macro_f1,
-        },
+        analytics: researchAnalytics,
         provenance: provenanceFor(getRecord(event.recordId)),
       };
     },
@@ -503,6 +544,10 @@ function createRoofRiskRepository(artifact) {
         provenance: current.provenance,
         disposal: current.disposal,
       };
+    },
+
+    getResearchAnalytics() {
+      return { api_version: API_VERSION, data_source: DATA_SOURCE, ...researchAnalytics };
     },
 
     listEvents,

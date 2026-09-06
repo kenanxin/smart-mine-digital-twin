@@ -59,8 +59,11 @@ function createExpertAdviceService(options = {}) {
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const apiKey = options.apiKey || process.env.DEEPSEEK_API_KEY || '';
   const endpoint = options.endpoint || process.env.DEEPSEEK_API_ENDPOINT || DEFAULT_ENDPOINT;
+  const model = options.model || process.env.DEEPSEEK_MODEL || 'deepseek-chat';
   const timeoutMs = Number(options.timeoutMs || 12000);
   return {
+    configured: Boolean(apiKey && typeof fetchImpl === 'function'),
+    endpoint,
     async generate(input = {}) {
       const fallback = localAdvice(input);
       if (!apiKey || typeof fetchImpl !== 'function') return fallback;
@@ -72,7 +75,7 @@ function createExpertAdviceService(options = {}) {
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
           signal: controller.signal,
           body: JSON.stringify({
-            model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+            model,
             temperature: 0.2,
             response_format: { type: 'json_object' },
             messages: [

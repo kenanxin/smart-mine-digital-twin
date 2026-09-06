@@ -348,15 +348,13 @@ function researchTrendOption(model) {
 }
 
 function researchClusterOption(model) {
-  if (!model.clusters.length) return { series: [], graphic: emptyGraphic('暂无分群数据') };
-  const colors = { green: '#50c878', yellow: '#f2b84b', orange: '#ef8f4e', red: '#f05b5b' };
+  if (!model.currentProfile.length) return { series: [], graphic: emptyGraphic('暂无当前指标数据') };
+  const maxMagnitude = Math.max(2, ...model.currentProfile.map((item) => Math.abs(item.value)));
   return {
     animationDuration: 240,
-    grid: { left: 46, right: 18, top: 18, bottom: 34 },
-    tooltip: { ...baseTooltip('item'), formatter: (params) => `离层 ${numberLabel(params.value[0])}\n支架阻力 ${numberLabel(params.value[1])}\n风险分 ${numberLabel(params.value[2], 0)}` },
-    xAxis: { type: 'value', name: '离层', nameTextStyle: { fontSize: 9 }, axisLabel: { fontSize: 9 } },
-    yAxis: { type: 'value', name: '支架阻力', nameTextStyle: { fontSize: 9 }, axisLabel: { fontSize: 9 } },
-    series: [{ type: 'scatter', symbolSize: (value) => Math.max(6, Math.min(18, Number(value[2]) / 6)), data: model.clusters.map((item) => ({ value: item.value, itemStyle: { color: colors[item.riskLevel] || '#32c7d9', opacity: 0.82 } })) }],
+    radar: { center: ['50%', '53%'], radius: '65%', splitNumber: 4, indicator: model.currentProfile.map((item) => ({ name: item.label, max: maxMagnitude, min: -maxMagnitude })), axisName: { color: '#a9bac0', fontSize: 9 }, splitLine: { lineStyle: { color: ['#26343b', '#30424a', '#3a4c54', '#465961'] } }, splitArea: { areaStyle: { color: ['rgba(50,199,217,.02)', 'rgba(50,199,217,.05)'] } }, axisLine: { lineStyle: { color: '#3b4c55' } } },
+    tooltip: { ...baseTooltip('item'), formatter: (params) => `${params.seriesName}\n${model.currentProfile.map((item) => `${item.label} ${item.value >= 0 ? '+' : ''}${numberLabel(item.value, 2)}σ`).join('\n')}` },
+    series: [{ type: 'radar', symbol: 'circle', symbolSize: 4, data: [{ value: model.currentProfile.map((item) => item.value), name: '当前记录', lineStyle: { color: '#ef8f4e', width: 2 }, itemStyle: { color: '#ef8f4e' }, areaStyle: { color: 'rgba(239,143,78,.18)' } }] }],
   };
 }
 
@@ -365,9 +363,9 @@ export function initPortalCharts() {
   return chartInstances;
 }
 
-export function updateRoofRiskCharts({ current = {}, history = {}, events = {} } = {}) {
+export function updateRoofRiskCharts({ current = {}, history = {}, events = {}, analytics = {} } = {}) {
   const model = buildRoofRiskChartModel(current, history, events);
-  const research = buildExpertResearchModel({ current, history, events });
+  const research = buildExpertResearchModel({ current, history, events, analytics });
   const title = document.getElementById('thresholdTrendTitle');
   const hint = document.getElementById('thresholdTrendHint');
   if (title) title.textContent = '当前记录 · XGBoost 风险概率';
