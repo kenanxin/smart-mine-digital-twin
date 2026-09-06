@@ -268,17 +268,12 @@ export function initPortalCharts() {
 
 export function updateRoofRiskCharts({ current = {}, history = {}, events = {} } = {}) {
   const model = buildRoofRiskChartModel(current, history, events);
-  const trend = model.thresholdTrend;
   const title = document.getElementById('thresholdTrendTitle');
   const hint = document.getElementById('thresholdTrendHint');
-  if (title) title.textContent = trend.mode === 'risk-score' ? '真实历史 · 综合风险分' : '真实历史 · 统计参考偏离趋势';
-  if (hint) hint.textContent = trend.mode === 'risk-score' ? '当前接口仅提供真实风险分历史' : '100% = P05/P95 统计参考边界 · 悬停查看原始值';
-  const setSummary = (id, value) => { const element = document.getElementById(id); if (element) element.textContent = value; };
-  setSummary('thresholdSampleCount', trend.sampleCount ? `${trend.sampleCount} 条` : '--');
-  setSummary('thresholdExceededCount', trend.exceededCount == null ? '待升级' : `${trend.exceededCount} 项`);
-  setSummary('thresholdPeakIndex', trend.peakIndex == null ? '峰值 --' : `峰值 ${numberLabel(trend.peakIndex, 1)}${trend.mode === 'risk-score' ? ' 分' : '%'}`);
+  if (title) title.textContent = '当前记录 · XGBoost 风险概率';
+  if (hint) hint.textContent = '四分类预测概率 · 与历史趋势分开展示';
   const options = {
-    thresholdTrendChart: thresholdTrendOption(model),
+    thresholdTrendChart: probabilityOption(model),
     regulatorDistributionChart: distributionOption(model),
     expertProbabilityChart: probabilityOption(model),
     expertDeviationChart: deviationOption(model),

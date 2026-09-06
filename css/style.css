@@ -2508,9 +2508,69 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
 .replay-workbench[data-risk-level="orange"] .replay-summary-grid .risk b { color: #f2994a; }
 .replay-workbench[data-risk-level="red"] .replay-summary-grid .risk b { color: #f05b5b; }
 
+.replay-sync-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #27363e;
+  border-left: 3px solid var(--telemetry-cyan);
+  background: #0d1b20;
+}
+
+.replay-sync-strip > div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.replay-sync-strip span {
+  color: var(--telemetry-cyan);
+  font: 700 9px/1.2 var(--font-mono);
+}
+
+.replay-sync-strip b {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replay-sync-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.replay-sync-actions button {
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid #35505a;
+  border-radius: 3px;
+  background: #14262d;
+  color: #c8dce3;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.replay-sync-actions button:hover:not(:disabled) {
+  border-color: var(--telemetry-cyan);
+  color: #f1fbfc;
+}
+
+.replay-sync-actions button:disabled {
+  border-color: #29363c;
+  background: #11191d;
+  color: #596970;
+  cursor: not-allowed;
+}
+
 .replay-analysis {
   display: grid;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(460px, 1.8fr) minmax(220px, 0.8fr);
+  grid-template-columns: minmax(560px, 1fr) minmax(240px, 0.28fr);
   gap: 8px;
   padding: 10px;
 }
@@ -2611,6 +2671,11 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
 }
 
 .replay-event:hover { border-color: #49606b; }
+.replay-event.active {
+  border-color: var(--telemetry-cyan);
+  background: #14272e;
+  box-shadow: inset 3px 0 0 var(--telemetry-cyan);
+}
 .replay-event i { width: 7px; height: 7px; border-radius: 50%; background: #50c878; }
 .replay-event.yellow i { background: #f2b84b; }
 .replay-event.orange i { background: #ef8f4e; }
@@ -2747,7 +2812,7 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   }
 }
 
-@media (max-width: 1279px) {
+@media (min-width: 901px) and (max-width: 1279px) {
   html,
   body {
     height: auto;
@@ -2818,6 +2883,9 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   .regulator-overview-layout {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .panel-right > .card:nth-child(2) { min-height: 240px; }
+  .panel-right .decision-card { min-height: 365px; }
 
   .regulator-overview-card,
   .expert-grid .portal-card.wide,
@@ -2982,6 +3050,7 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
 body.portal-enterprise .core-monitoring-workbench {
   border-top-color: var(--attention-amber);
   background: #0a1115;
+  scroll-margin-top: 12px;
 }
 
 .core-monitoring-head {
@@ -2992,6 +3061,27 @@ body.portal-enterprise .core-monitoring-workbench {
 .core-monitoring-head h2 {
   font-size: 20px;
   text-wrap: balance;
+}
+
+.diagnosis-head-status {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  min-width: 190px;
+}
+
+.diagnosis-head-status .core-monitoring-badge {
+  border-color: rgba(242, 184, 75, 0.42);
+  color: var(--attention-amber);
+}
+
+.diagnosis-head-status b {
+  max-width: 280px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font: 9px/1.2 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .core-monitoring-workbench .card-body {
@@ -3021,6 +3111,13 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   padding: 10px 12px;
   text-align: left;
 }
+
+.threshold-overview > div.primary {
+  border-left: 3px solid var(--attention-amber);
+  background: #171a14;
+}
+
+.threshold-overview > div.primary b { color: #f3ca72; }
 
 .threshold-overview b {
   font-size: 17px;
@@ -3197,6 +3294,15 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   border: 0;
 }
 
+.replay-workbench {
+  scroll-margin-top: 12px;
+}
+
+.replay-chart-pane #replayTrendChart {
+  height: 380px;
+  min-height: 380px;
+}
+
 @media (max-width: 1279px) {
   .core-monitoring-workbench .card-body {
     grid-template-columns: minmax(0, 1fr);
@@ -3206,6 +3312,10 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   .metric-rail .env-item {
     grid-template-columns: minmax(150px, 1fr) minmax(100px, auto) minmax(180px, 1fr) minmax(96px, auto);
   }
+
+  .replay-analysis {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.32fr);
+  }
 }
 
 @media (max-width: 767px) {
@@ -3213,9 +3323,15 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   .attention-summary {
     align-items: flex-start;
     flex-direction: column;
-    min-height: 240px;
+    height: 180px;
+    min-height: 180px;
+    overflow: hidden;
   }
-  .attention-summary > div { width: 100%; }
+  .attention-summary > div {
+    width: 100%;
+    max-height: 136px;
+    overflow-y: auto;
+  }
   .metric-rail .env-item {
     grid-template-columns: minmax(0, 1fr) auto;
     height: 86px;
@@ -3231,4 +3347,30 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   .metric-rail .env-bar { grid-column: 1 / -1; }
   .env-state { grid-column: 2; grid-row: 3; white-space: nowrap; }
   .trend-evidence .trend-chart { height: 270px; min-height: 270px; }
+
+  .diagnosis-head-status {
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .replay-sync-strip {
+    align-items: flex-start;
+    flex-direction: column;
+    height: 124px;
+    min-height: 124px;
+  }
+
+  .replay-sync-strip b {
+    white-space: normal;
+  }
+
+  .replay-sync-actions {
+    width: 100%;
+  }
+
+  .replay-sync-actions button {
+    flex: 1;
+  }
+
+  .replay-chart-pane #replayTrendChart { height: 290px; min-height: 290px; }
 }

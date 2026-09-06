@@ -6,7 +6,7 @@ const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../css/style.css', import.meta.url), 'utf8');
 const main = fs.readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
 
-test('enterprise portal exposes the real metric rail, trend chart, and provenance strip', () => {
+test('enterprise portal exposes the current diagnosis rail, model probability chart, and provenance strip', () => {
   assert.match(html, /id="enterpriseMetricRail"/);
   assert.match(html, /data-metric-slot="6"/);
   assert.match(html, /id="thresholdTrendChart"/);
@@ -51,12 +51,25 @@ test('enterprise portal exposes an explicit real-history replay workbench', () =
     'replayWorkbench', 'replayTrendChart', 'replaySeek', 'replayPlayPause',
     'replayPrevious', 'replayNext', 'replaySpeed', 'replayLoop',
   ]) assert.match(html, new RegExp(`id="${id}"`));
-  assert.match(html, /真实监测数据历史回放/);
+  assert.match(html, /真实历史数据回放/);
   assert.doesNotMatch(html, /实时数据回放/);
   assert.match(css, /body\.portal-enterprise[^}]*overflow-y:\s*auto/s);
   assert.match(css, /body\.portal-enterprise[^}]*height:\s*100%/s);
   assert.match(css, /\.replay-analysis[^}]*grid-template-columns:/s);
-  assert.match(css, /#replayTrendChart[^}]*height:\s*320px/s);
+  assert.match(css, /replay-chart-pane #replayTrendChart[^}]*height:\s*380px/s);
+});
+
+test('current diagnosis and historical replay have distinct jobs without duplicate metric grids', () => {
+  assert.match(html, /CURRENT DIAGNOSIS · 单条记录/);
+  assert.match(html, /当前风险诊断/);
+  assert.match(html, /当前记录 · XGBoost 风险概率/);
+  assert.match(html, /HISTORY REPLAY · 全量序列/);
+  assert.match(html, /id="replaySyncNotice"/);
+  assert.match(html, /id="replayViewDiagnosis"/);
+  assert.match(html, /id="replayReturnLive"/);
+  assert.match(html, /id="replaySeek"[^>]*aria-label="历史数据回放进度"/);
+  assert.doesNotMatch(html, /id="replayMetricGrid"/);
+  assert.doesNotMatch(html, /id="thresholdSampleCount"|id="thresholdPeakIndex"/);
 });
 
 test('enterprise main controller owns one replay controller and authenticated replay calls', () => {
@@ -67,6 +80,8 @@ test('enterprise main controller owns one replay controller and authenticated re
   assert.match(main, /liveRoofRiskApiPayload/);
   assert.match(main, /replayRoofRiskApiPayload/);
   assert.match(main, /activateReplayDisplay/);
+  assert.match(main, /deactivateReplayDisplay/);
+  assert.match(main, /replayReturnLive/);
   assert.doesNotMatch(main, /await replayController\.seek\(replayMeta\.default_index\);\s*replayController\.play\(\)/s);
 });
 
@@ -90,9 +105,9 @@ test('enterprise core monitoring is a full-width section below the main scene', 
   assert.match(css, /body\.portal-enterprise \.core-monitoring-workbench[^}]*display:\s*block/s);
 });
 
-test('enterprise uses statistical reference language instead of calling percentiles safety thresholds', () => {
-  assert.match(html, /统计参考偏离趋势/);
-  assert.match(html, /100% = P05\/P95 统计参考边界/);
+test('enterprise keeps P05 and P95 inside metric references and historical replay', () => {
+  assert.match(html, /P05\/P95 统计参考偏离/);
+  assert.match(html, /P05-P95 参考范围/);
   assert.doesNotMatch(html, /P95 阈值|最高阈值指数|当前超 P95/);
 });
 
@@ -100,6 +115,7 @@ test('enterprise command surface has one primary risk score and stable evidence 
   assert.match(html, /class="skip-link"[^>]*href="#threeContainer"/);
   assert.match(html, /id="enterpriseAttentionSummary"/);
   assert.match(html, /id="currentModelLevel"/);
+  assert.match(html, /id="currentModelConfidence"/);
   assert.match(html, /id="modelEvidenceCount"/);
   assert.match(html, /data-metric-key="distance_to_water"/);
   assert.match(html, /class="env-state"/);
@@ -109,6 +125,7 @@ test('enterprise command surface has one primary risk score and stable evidence 
 
 test('enterprise attention summary distinguishes model evidence from statistical deviation', () => {
   assert.match(main, /metric\.isModelEvidence \|\| metric\.isReferenceDeviation/);
+  assert.match(main, /metrics\.filter\(\(metric\) => metric\.isReferenceDeviation\)\.length/);
   assert.match(main, /模型证据/);
   assert.doesNotMatch(main, /metric\.isReferenceDeviation \|\| metric\.status !== 'safe'/);
 });

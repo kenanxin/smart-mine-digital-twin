@@ -63,8 +63,14 @@ async function inspectRole(browser, account, viewport, suffix) {
     const stabilityBefore = await page.evaluate(() => ({
       camera: document.getElementById('threeContainer')?.dataset.cameraPosition,
       target: document.getElementById('threeContainer')?.dataset.cameraTarget,
+      diagnosisRecord: document.getElementById('diagnosisRecordContext')?.textContent,
+      roofDataMode: document.body.dataset.roofDataMode,
       bodyHeight: document.body.scrollHeight,
       coreHeight: document.getElementById('enterpriseCoreMonitoring')?.getBoundingClientRect().height,
+      replayHeight: document.getElementById('replayWorkbench')?.getBoundingClientRect().height,
+      replayParts: Object.fromEntries([...document.querySelectorAll('#replayWorkbench > *')].map((element) => [element.className, element.getBoundingClientRect().height])),
+      pageParts: Object.fromEntries([...document.body.children].map((element, index) => [element.id || element.className || `child-${index}`, element.getBoundingClientRect().height])),
+      enterpriseParts: Object.fromEntries(['.main-container', '.panel-left', '.panel-center', '.panel-right', '.panel-right > .card:nth-child(1)', '.panel-right > .card:nth-child(2)', '.panel-right > .card:nth-child(3)', '.panel-right > .card:nth-child(4)', '#roofWarningCard', '.decision-card', '.closed-loop-card', '.prod-stats'].map((selector) => [selector, document.querySelector(selector)?.getBoundingClientRect().height])),
     }));
     const workbench = page.locator('#replayWorkbench');
     await workbench.scrollIntoViewIfNeeded();
@@ -96,11 +102,22 @@ async function inspectRole(browser, account, viewport, suffix) {
     await page.waitForFunction((index) => Number(document.getElementById('replaySeek')?.value) >= index + 2, speedStartIndex, { timeout: 3_000 });
     await page.locator('#replayPlayPause').click();
     const speedEndIndex = Number(await page.locator('#replaySeek').inputValue());
+    await page.waitForFunction(() => {
+      const primaryScore = document.getElementById('riskScore')?.textContent?.trim();
+      const replayScore = document.getElementById('replayRisk')?.textContent?.split('·')[0]?.trim();
+      return document.body.dataset.roofDataMode === 'replay' && primaryScore === replayScore;
+    });
     const stabilityAfter = await page.evaluate(() => ({
       camera: document.getElementById('threeContainer')?.dataset.cameraPosition,
       target: document.getElementById('threeContainer')?.dataset.cameraTarget,
+      diagnosisRecord: document.getElementById('diagnosisRecordContext')?.textContent,
+      roofDataMode: document.body.dataset.roofDataMode,
       bodyHeight: document.body.scrollHeight,
       coreHeight: document.getElementById('enterpriseCoreMonitoring')?.getBoundingClientRect().height,
+      replayHeight: document.getElementById('replayWorkbench')?.getBoundingClientRect().height,
+      replayParts: Object.fromEntries([...document.querySelectorAll('#replayWorkbench > *')].map((element) => [element.className, element.getBoundingClientRect().height])),
+      pageParts: Object.fromEntries([...document.body.children].map((element, index) => [element.id || element.className || `child-${index}`, element.getBoundingClientRect().height])),
+      enterpriseParts: Object.fromEntries(['.main-container', '.panel-left', '.panel-center', '.panel-right', '.panel-right > .card:nth-child(1)', '.panel-right > .card:nth-child(2)', '.panel-right > .card:nth-child(3)', '.panel-right > .card:nth-child(4)', '#roofWarningCard', '.decision-card', '.closed-loop-card', '.prod-stats'].map((selector) => [selector, document.querySelector(selector)?.getBoundingClientRect().height])),
       primaryScore: document.getElementById('riskScore')?.textContent,
       replayScore: document.getElementById('replayRisk')?.textContent?.split('·')[0]?.trim(),
     }));
@@ -108,6 +125,18 @@ async function inspectRole(browser, account, viewport, suffix) {
     const chartScreenshot = path.join(outputDir, `${account.role}-${suffix}-replay-chart.png`);
     await page.locator('#replayTrendChart').screenshot({ path: chartScreenshot });
     const chartStats = await sharp(chartScreenshot).stats();
+    await page.locator('#replayReturnLive').click();
+    await page.waitForFunction((recordId) => (
+      document.body.dataset.roofDataMode === 'live'
+      && document.getElementById('replayReturnLive')?.disabled
+      && document.getElementById('diagnosisRecordContext')?.textContent === recordId
+    ), stabilityBefore.diagnosisRecord);
+    const returnLive = await page.evaluate(() => ({
+      mode: document.body.dataset.roofDataMode,
+      diagnosisRecord: document.getElementById('diagnosisRecordContext')?.textContent,
+      replayPaused: document.getElementById('replayStatus')?.textContent === '回放已暂停',
+      buttonDisabled: document.getElementById('replayReturnLive')?.disabled,
+    }));
     replay = {
       label: await page.locator('#replayTitle').textContent(),
       pausedStable: pausedRecord === stableRecord,
@@ -122,6 +151,11 @@ async function inspectRole(browser, account, viewport, suffix) {
       displayConsistent: stabilityAfter.primaryScore === stabilityAfter.replayScore,
       cameraStable: stabilityBefore.camera === stabilityAfter.camera && stabilityBefore.target === stabilityAfter.target,
       layoutStable: stabilityBefore.bodyHeight === stabilityAfter.bodyHeight && stabilityBefore.coreHeight === stabilityAfter.coreHeight,
+      liveRestored: returnLive.mode === 'live'
+        && returnLive.diagnosisRecord === stabilityBefore.diagnosisRecord
+        && returnLive.replayPaused
+        && returnLive.buttonDisabled,
+      returnLive,
       stabilityBefore,
       stabilityAfter,
       chartScreenshot,
@@ -218,7 +252,7 @@ async function main() {
       if (overflow) issues.push('horizontal overflow');
       if (!result.resized) issues.push('chart did not resize');
       if (result.scenePixels && Math.max(...result.scenePixels.stdev) < 12) issues.push('Three.js canvas pixel variance is too low');
-      if (result.replay && !result.replay.label.includes('历史回放')) issues.push('replay label is missing');
+      if (result.replay && !result.replay.label.includes('真实历史数据回放')) issues.push('replay label is missing');
       if (result.replay && !result.replay.pausedStable) issues.push('replay changed while paused');
       if (result.replay && result.replay.pausedRecord === result.replay.nextRecord) issues.push('replay next did not change the record');
       if (result.replay && result.replay.nextDelta !== 1) issues.push('replay next did not advance exactly one record');
@@ -227,6 +261,7 @@ async function main() {
       if (result.replay && !result.replay.displayConsistent) issues.push('primary score and replay score diverged');
       if (result.replay && !result.replay.cameraStable) issues.push('Three.js camera moved during replay');
       if (result.replay && !result.replay.layoutStable) issues.push('layout shifted during replay');
+      if (result.replay && !result.replay.liveRestored) issues.push('return-to-live did not restore the original diagnosis');
       if (result.replay && Math.max(...result.replay.chartStdev) < 12) issues.push('replay chart pixel variance is too low');
       const unexpectedConsoleErrors = result.consoleErrors.filter((message) => !message.startsWith('Failed to load resource:'));
       if (unexpectedConsoleErrors.length) issues.push(`console errors: ${unexpectedConsoleErrors.join(' | ')}`);

@@ -329,7 +329,10 @@ function renderEnterpriseMetricSlots(viewModel, demoValues = null) {
   });
 
   setText('currentModelLevel', viewModel.available ? viewModel.model.predictedClass : '--');
+  setText('currentModelConfidence', viewModel.available ? viewModel.model.confidenceText : '--');
+  setText('currentLabelAgreement', viewModel.available ? viewModel.model.labelAgreement : '等待真实数据');
   setText('modelEvidenceCount', viewModel.available ? `${viewModel.model.evidenceCount ?? 0} 项` : '--');
+  setText('thresholdExceededCount', viewModel.available ? `${metrics.filter((metric) => metric.isReferenceDeviation).length} 项` : '--');
   const attention = document.getElementById('enterpriseAttentionSummary');
   if (attention) {
     const noteworthy = metrics.filter((metric) => metric.isModelEvidence || metric.isReferenceDeviation);
@@ -382,19 +385,6 @@ function renderExpertModel(viewModel) {
   setText('apiRecordTime', viewModel.provenance.timestamp);
   setText('apiSourceHash', viewModel.provenance.hashShort);
   setText('apiModelAccuracy', viewModel.model.accuracyText);
-}
-
-function replayMetricMarkup(metric) {
-  const progress = Number.isFinite(metric.percent) ? metric.percent : 0;
-  const p05 = Number.isFinite(metric.p05) ? metric.p05 : '--';
-  const p95 = Number.isFinite(metric.p95) ? metric.p95 : '--';
-  return `
-    <div class="replay-metric ${metric.status}" style="--metric-progress:${progress}%">
-      <div class="replay-metric-head"><span>${metric.label}</span><b>${metric.text}</b></div>
-      <div class="replay-metric-reference"><span>P05 ${p05}</span><span>P95 ${p95} ${metric.unit || ''}</span></div>
-      <span class="replay-metric-bar"><i></i></span>
-    </div>
-  `;
 }
 
 function renderReplayEvents(meta) {
@@ -466,9 +456,14 @@ function applyReplayFrame(frame) {
   setText('replaySourceHash', viewModel.provenance.hashShort);
   setText('replayTrueClass', payload.model_output?.true_class || '--');
   setText('replayPredictedClass', payload.model_output?.predicted_class || '--');
+  if (replayDisplayActive) {
+    setText('diagnosisModeBadge', `历史记录 · #${frame.index + 1}`);
+    setText('diagnosisRecordContext', viewModel.provenance.recordId);
+    setText('replaySyncText', `当前诊断已同步至第 ${new Intl.NumberFormat('zh-CN').format(frame.index + 1)} 条 · ${viewModel.provenance.recordId}`);
+  }
+  const returnLive = document.getElementById('replayReturnLive');
+  if (returnLive) returnLive.disabled = !replayDisplayActive;
 
-  const metricGrid = document.getElementById('replayMetricGrid');
-  if (metricGrid) metricGrid.innerHTML = viewModel.metrics.filter((metric) => metric.key !== 'data_quality').map(replayMetricMarkup).join('');
   const seek = document.getElementById('replaySeek');
   if (seek) seek.value = String(frame.index);
   const workbench = document.getElementById('replayWorkbench');
@@ -476,6 +471,9 @@ function applyReplayFrame(frame) {
     workbench.dataset.recordId = viewModel.provenance.recordId;
     workbench.dataset.riskLevel = payload.risk?.level || 'green';
   }
+  document.querySelectorAll('[data-replay-index]').forEach((button) => {
+    button.classList.toggle('active', Number(button.dataset.replayIndex) === frame.index);
+  });
 
   updateReplayChart({ current: payload, history: frame.history });
   if (replayDisplayActive) {
@@ -498,6 +496,18 @@ function activateReplayDisplay() {
   replayDisplayActive = true;
   document.body.dataset.roofDataMode = 'replay';
   if (replayRoofRiskFrame) applyReplayFrame(replayRoofRiskFrame);
+}
+
+async function deactivateReplayDisplay() {
+  if (!replayDisplayActive) return;
+  replayController?.pause();
+  replayDisplayActive = false;
+  document.body.dataset.roofDataMode = 'live';
+  setText('diagnosisModeBadge', '实时记录');
+  setText('replaySyncText', '已返回实时记录，历史回放保持暂停');
+  const returnLive = document.getElementById('replayReturnLive');
+  if (returnLive) returnLive.disabled = true;
+  await refreshRoofRiskApiStatus();
 }
 
 async function loadReplayFrame(index) {
@@ -551,6 +561,10 @@ async function initReplayWorkbench() {
       button.addEventListener('click', () => replayController.setSpeed(Number(button.dataset.replaySpeed)));
     });
     document.getElementById('replayLoop')?.addEventListener('change', (event) => replayController.setLoop(event.target.checked));
+    document.getElementById('replayViewDiagnosis')?.addEventListener('click', () => {
+      document.getElementById('enterpriseCoreMonitoring')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('replayReturnLive')?.addEventListener('click', deactivateReplayDisplay);
 
     await replayController.seek(replayMeta.default_index);
   } catch (error) {
@@ -1343,6 +1357,8 @@ async function refreshRoofRiskApiStatus() {
       setText('enterpriseRecordTime', viewModel.provenance.timestamp);
       setText('enterpriseDeviceId', viewModel.provenance.deviceId);
       setText('enterpriseSourceHash', viewModel.provenance.hashShort);
+      setText('diagnosisModeBadge', '实时记录');
+      setText('diagnosisRecordContext', viewModel.provenance.recordId);
       renderExpertModel(viewModel);
       refreshClosedLoop(payload);
     }

@@ -228,22 +228,25 @@
   <div><span>SHA-256</span><b id="enterpriseSourceHash">--</b></div>
 </section>
 
-<!-- ============ 企业端顶板核心监测（主看板下方） ============ -->
+<!-- ============ 企业端当前风险诊断（主看板下方） ============ -->
 <section class="core-monitoring-workbench" id="enterpriseCoreMonitoring" aria-labelledby="coreMonitoringTitle">
   <div class="core-monitoring-head">
     <div>
-      <span class="replay-kicker"><i></i>企业端 · 下方监测工作区</span>
-      <h2 id="coreMonitoringTitle">顶板灾变核心监测</h2>
-      <p>向下滚动查看真实历史指标、统计参考范围和当前多源监测值</p>
+      <span class="replay-kicker"><i></i>CURRENT DIAGNOSIS · 单条记录</span>
+      <h2 id="coreMonitoringTitle">当前风险诊断</h2>
+      <p>聚焦当前记录的七项监测量、XGBoost 判定概率与证据链</p>
     </div>
-    <span class="core-monitoring-badge">真实数据 · P05 → P95</span>
+    <div class="diagnosis-head-status">
+      <span class="core-monitoring-badge" id="diagnosisModeBadge">实时记录</span>
+      <b id="diagnosisRecordContext">记录 --</b>
+    </div>
   </div>
   <div class="card-body">
     <div class="threshold-overview" id="thresholdOverview" aria-live="polite">
-      <div><span>当前模型等级</span><b id="currentModelLevel">--</b></div>
+      <div class="primary"><span>模型判定</span><b id="currentModelLevel">--</b></div>
+      <div><span>模型置信度</span><b id="currentModelConfidence">--</b><em id="currentLabelAgreement">等待真实数据</em></div>
       <div><span>模型证据项</span><b id="modelEvidenceCount">--</b></div>
       <div><span>统计偏离项</span><b id="thresholdExceededCount">--</b></div>
-      <div><span>连续样本</span><b id="thresholdSampleCount">--</b><em id="thresholdPeakIndex">峰值 --</em></div>
     </div>
     <div class="attention-summary" id="enterpriseAttentionSummary" aria-live="polite">
       <strong>重点关注</strong>
@@ -260,11 +263,11 @@
     </div>
     <div class="trend-evidence">
       <div class="section-heading compact-heading threshold-heading">
-        <span id="thresholdTrendTitle">真实历史 · 统计参考偏离趋势</span>
-        <em id="thresholdTrendHint">100% = P05/P95 统计参考边界 · 悬停查看原始值</em>
+        <span id="thresholdTrendTitle">当前记录 · XGBoost 风险概率</span>
+        <em id="thresholdTrendHint">四分类预测概率 · 与历史趋势分开展示</em>
       </div>
-      <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="真实历史指标相对各自 P05-P95 参考范围的偏离趋势">
-        <span class="chart-loading-state">正在加载真实历史数据</span>
+      <div class="role-chart trend-chart" id="thresholdTrendChart" role="img" aria-label="当前真实记录的 XGBoost 四分类风险概率">
+        <span class="chart-loading-state">正在读取当前模型判定</span>
       </div>
     </div>
     <div class="simulation-note" id="simulationNote">正在读取老师提供的真实监测数据</div>
@@ -480,9 +483,9 @@
 <section class="replay-workbench" id="replayWorkbench" aria-labelledby="replayTitle" data-record-id="">
   <header class="replay-header">
     <div>
-      <span class="replay-kicker"><i></i>老师 CSV · 可追溯回放</span>
-      <h2 id="replayTitle">真实监测数据历史回放</h2>
-      <p>七项监测指标、XGBoost 判定与井下风险场使用同一条原始记录同步推进</p>
+      <span class="replay-kicker"><i></i>HISTORY REPLAY · 全量序列</span>
+      <h2 id="replayTitle">真实历史数据回放</h2>
+      <p>沿 20,000 条老师 CSV 记录回看风险演变，选择的记录同步到上方当前诊断</p>
     </div>
     <div class="replay-source">
       <span id="replayStatus">正在读取</span>
@@ -498,13 +501,17 @@
     <div><span>模型结果</span><b id="replayPrediction">--</b><em id="replayConfidence">置信度 --</em></div>
   </div>
 
+  <div class="replay-sync-strip" id="replaySyncNotice" aria-live="polite">
+    <div><span>诊断联动</span><b id="replaySyncText">回放尚未接管当前诊断，首屏保持实时记录</b></div>
+    <div class="replay-sync-actions">
+      <button id="replayViewDiagnosis" type="button">查看当前诊断</button>
+      <button id="replayReturnLive" type="button" disabled>返回实时记录</button>
+    </div>
+  </div>
+
   <div class="replay-analysis">
-    <section class="replay-pane replay-metrics-pane">
-      <div class="replay-pane-head"><strong>当前多源指标</strong><span>P05 → P95</span></div>
-      <div class="replay-metric-grid" id="replayMetricGrid"></div>
-    </section>
     <section class="replay-pane replay-chart-pane">
-      <div class="replay-pane-head"><strong>真实连续趋势</strong><span>统计参考偏离 · 支持拖动缩放</span></div>
+      <div class="replay-pane-head"><strong>真实连续趋势</strong><span>P05/P95 统计参考偏离 · 支持拖动缩放</span></div>
       <div class="role-chart" id="replayTrendChart" role="img" aria-label="真实 CSV 多指标历史回放趋势"></div>
     </section>
     <section class="replay-pane replay-events-pane">
@@ -521,7 +528,7 @@
     </div>
     <label class="replay-seek-wrap" for="replaySeek">
       <span id="replayStartTime">数据起点</span>
-      <input id="replaySeek" type="range" min="0" max="19999" value="0" step="1">
+      <input id="replaySeek" type="range" min="0" max="19999" value="0" step="1" aria-label="历史数据回放进度">
       <span id="replayEndTime">数据终点</span>
     </label>
     <div class="replay-speed" id="replaySpeed" aria-label="回放速度">
