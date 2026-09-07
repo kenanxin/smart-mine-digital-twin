@@ -121,7 +121,9 @@ function renderRail(state) {
     if (step === state.status) node.classList.add('active');
     else if (currentIndex > index || state.status === DEMO_STATES.ARCHIVED) node.classList.add('done');
   });
-  rail.querySelectorAll('i').forEach((connector) => connector.classList.toggle('done', state.status !== DEMO_STATES.READY));
+  rail.querySelectorAll('i').forEach((connector, index) => {
+    connector.classList.toggle('done', currentIndex > index || state.status === DEMO_STATES.ARCHIVED);
+  });
 }
 
 function renderEvidenceList(container, records, { editable = false, onRemove = null } = {}) {
@@ -144,6 +146,9 @@ function renderEvidenceList(container, records, { editable = false, onRemove = n
       image.src = preview;
     }
     image.alt = `现场证据：${record.name}`;
+    image.width = 160;
+    image.height = 120;
+    image.loading = 'lazy';
     caption.textContent = `${record.name} · ${(Number(record.size) / 1024).toFixed(0)} KB`;
     figure.append(image, caption);
     if (editable && onRemove) {
@@ -231,7 +236,7 @@ export async function setupWarningDemo(options = {}) {
   function renderSourceData() {
     if (!sourceData) return;
     setText('enterpriseWarningScore', sourceData.risk?.score ?? 70);
-    setText('enterpriseWarningRecord', sourceData.record_id);
+    setText('enterpriseWarningRecord', sourceData.record_id || sourceData.model_output?.record_id || sourceData.provenance?.record_id);
     const confidence = Number(sourceData.model_output?.confidence);
     setText('enterpriseWarningConfidence', Number.isFinite(confidence) ? `${(confidence * 100).toFixed(2)}%` : '--');
     const evidence = Array.isArray(sourceData.feature_evidence) ? sourceData.feature_evidence : [];
@@ -411,13 +416,14 @@ export async function setupWarningDemo(options = {}) {
   listen('enterpriseDisposalCancel', 'click', () => closeDialog(element('enterpriseDisposalDrawer')));
   listen('enterpriseDisposalForm', 'submit', submitDisposal);
   listen('disposalPhotos', 'change', async (event) => {
-    const selected = Array.from(event.currentTarget.files || []);
+    const input = event.currentTarget;
+    const selected = Array.from(input.files || []);
     const validation = validateEvidenceFiles([...evidenceRecords, ...selected]);
     setText('enterpriseDisposalError', validation.valid ? '' : validation.message);
-    if (!validation.valid) { event.currentTarget.value = ''; return; }
+    if (!validation.valid) { input.value = ''; return; }
     try {
       for (const file of selected) await media.put(DEMO_EVENT_ID, file);
-      event.currentTarget.value = '';
+      input.value = '';
       await loadEvidence();
     } catch (error) { setText('enterpriseDisposalError', error.message); }
   });

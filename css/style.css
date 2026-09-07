@@ -3561,11 +3561,13 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   border-radius: 5px;
   background: #10181d;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.72);
+  overscroll-behavior: contain;
 }
 
 .warning-demo-dialog {
   width: min(720px, calc(100vw - 32px));
   max-height: min(650px, calc(100vh - 32px));
+  margin: auto;
   padding: 0;
   overflow: auto;
 }
@@ -3706,6 +3708,8 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
 .expert-similar-cases p { color: #72858e; font-size: 9px; }
 .expert-demo-archive textarea { resize: vertical; }
 .expert-demo-archive button { width: 100%; }
+
+body:not([data-warning-demo-state="ready"]) .legacy-loop-card { display: none; }
 
 @media (max-width: 1100px) {
   .warning-demo-strip { align-items: stretch; flex-wrap: wrap; }

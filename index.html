@@ -193,7 +193,7 @@
     </section>
 
     <!-- 三端闭环 -->
-    <section class="card closed-loop-card">
+    <section class="card closed-loop-card legacy-loop-card">
       <div class="card-header">
         <span class="card-title">三端协同闭环</span>
         <span class="card-badge warn" id="enterpriseLoopStatus">处置中</span>
@@ -268,17 +268,17 @@
   <div class="warning-drawer-source">
     <span>触发依据</span><b>真实记录 REC-202511101149-02909 · 风险 70</b><em>teacher_roof_monitoring.csv</em>
   </div>
-  <div class="warning-review-notice" id="enterpriseRectificationNotice" hidden></div>
-  <form id="enterpriseDisposalForm">
+  <div class="warning-review-notice" id="enterpriseRectificationNotice" role="status" aria-live="polite" hidden></div>
+  <form id="enterpriseDisposalForm" autocomplete="off">
     <label for="disposalMeasures">补强支护措施</label>
-    <textarea id="disposalMeasures" rows="4" required placeholder="填写加密锚索、复核支架初撑力等现场措施"></textarea>
+    <textarea id="disposalMeasures" name="measures" rows="4" required autocomplete="off" placeholder="填写加密锚索、复核支架初撑力等现场措施…"></textarea>
     <div class="warning-form-grid">
-      <div><label for="disposalWorkOrder">工单编号</label><input id="disposalWorkOrder" required value="GD-2026-0907-01"></div>
-      <div><label for="disposalResponsiblePerson">现场负责人</label><input id="disposalResponsiblePerson" required placeholder="姓名"></div>
-      <div><label for="disposalCompletedAt">处置完成时间</label><input id="disposalCompletedAt" type="datetime-local" required></div>
+      <div><label for="disposalWorkOrder">工单编号</label><input id="disposalWorkOrder" name="workOrder" required autocomplete="off" spellcheck="false" value="GD-2026-0907-01"></div>
+      <div><label for="disposalResponsiblePerson">现场负责人</label><input id="disposalResponsiblePerson" name="responsiblePerson" required autocomplete="off" placeholder="填写姓名…"></div>
+      <div><label for="disposalCompletedAt">处置完成时间</label><input id="disposalCompletedAt" name="completedAt" type="datetime-local" required autocomplete="off"></div>
     </div>
     <label for="disposalPhotos">现场照片 <span>JPEG / PNG / WebP，最多4张，单张不超过5MB</span></label>
-    <input id="disposalPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple required>
+    <input id="disposalPhotos" name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple autocomplete="off">
     <div class="warning-photo-list" id="enterprisePhotoList"><p>尚未选择现场照片</p></div>
     <p class="warning-form-error" id="enterpriseDisposalError" role="alert"></p>
     <div class="warning-dialog-actions">
@@ -373,11 +373,11 @@
         <article><span>后续监测真实对照</span><b>45</b><em>REC-202511101153-02911</em></article>
         <p>仅作核验对照，不代表工程措施的因果效果。</p>
       </div>
-      <form id="regulatorReviewForm">
+      <form id="regulatorReviewForm" autocomplete="off">
         <label for="regulatorReviewOpinion">监管核验意见</label>
-        <textarea id="regulatorReviewOpinion" rows="3" required placeholder="填写工单、照片和后续监测对照的核验结论"></textarea>
+        <textarea id="regulatorReviewOpinion" name="reviewOpinion" rows="3" required autocomplete="off" placeholder="填写工单、照片和后续监测对照的核验结论…"></textarea>
         <label for="regulatorRectificationDeadline">整改期限 <span>驳回时必填</span></label>
-        <input id="regulatorRectificationDeadline" type="datetime-local">
+        <input id="regulatorRectificationDeadline" name="rectificationDeadline" type="datetime-local" autocomplete="off">
         <p class="warning-form-error" id="regulatorReviewError" role="alert"></p>
         <div class="regulator-review-actions">
           <button id="regulatorRejectAction" type="button">驳回整改</button>
@@ -402,7 +402,7 @@
       </div>
     </section>
 
-    <section class="portal-card">
+    <section class="portal-card legacy-loop-card">
       <div class="portal-card-head">
         <strong>预警闭环</strong>
         <span id="regulatorLoopEvent">--</span>
@@ -432,7 +432,7 @@
       </div>
     </section>
 
-    <section class="portal-card">
+    <section class="portal-card legacy-loop-card">
       <div class="portal-card-head">
         <strong>监管督办</strong>
         <span id="regulatorAdviceStatus">等待真实事件</span>
@@ -455,7 +455,7 @@
       </div>
     </section>
 
-    <section class="portal-card wide">
+    <section class="portal-card wide legacy-loop-card">
       <div class="portal-card-head">
         <strong>三端闭环链路</strong>
         <span>统一接口接入</span>
@@ -507,7 +507,7 @@
       <article class="expert-demo-archive">
         <span>闭环与案例库</span>
         <label for="expertArchiveConclusion">复盘结论</label>
-        <textarea id="expertArchiveConclusion" rows="3">本事件已完成企业处置与监管核验，建议纳入顶板较大风险复盘案例库。</textarea>
+        <textarea id="expertArchiveConclusion" name="archiveConclusion" rows="3" autocomplete="off">本事件已完成企业处置与监管核验，建议纳入顶板较大风险复盘案例库。</textarea>
         <button class="warning-demo-primary" id="expertArchiveAction" type="button">确认闭环并纳入案例库</button>
         <p class="warning-form-error" id="expertArchiveError" role="alert"></p>
       </article>

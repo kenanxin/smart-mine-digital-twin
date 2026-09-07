@@ -5,6 +5,7 @@ import test from 'node:test';
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../css/style.css', import.meta.url), 'utf8');
 const main = fs.readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
+const warningDemoUiSource = fs.readFileSync(new URL('../js/warning-demo-ui.mjs', import.meta.url), 'utf8');
 
 test('enterprise portal exposes the current diagnosis rail, model probability chart, and provenance strip', () => {
   assert.match(html, /id="enterpriseMetricRail"/);
@@ -161,6 +162,16 @@ test('orange warning demo exposes accessible role-specific workflow surfaces', (
   assert.match(html, /id="regulatorReviewOpinion"/);
   assert.match(html, /id="regulatorRectificationDeadline"/);
   assert.match(html, /id="expertArchiveConclusion"/);
+});
+
+test('warning demo forms provide stable names, autofill policy, and bounded dialogs', () => {
+  assert.match(html, /<form id="enterpriseDisposalForm" autocomplete="off">/);
+  assert.match(html, /id="disposalMeasures" name="measures"[^>]+autocomplete="off"/);
+  assert.match(html, /id="disposalPhotos" name="photos"[^>]+autocomplete="off"/);
+  assert.match(html, /id="regulatorReviewOpinion" name="reviewOpinion"[^>]+autocomplete="off"/);
+  assert.match(html, /id="expertArchiveConclusion" name="archiveConclusion"[^>]+autocomplete="off"/);
+  assert.match(css, /\.warning-demo-dialog,[\s\S]*?overscroll-behavior:\s*contain/);
+  assert.match(warningDemoUiSource, /image\.width = 160;[\s\S]*?image\.height = 120;[\s\S]*?image\.loading = 'lazy';/);
 });
 
 test('warning demo layout is bounded, in-flow for analysis, and does not resize Three.js', () => {
