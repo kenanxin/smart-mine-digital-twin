@@ -81,7 +81,7 @@
 
 - `js/warning-demo-state.mjs`：状态枚举、迁移、校验、动作约束、`localStorage` 持久化和跨标签页 `storage` 通知。
 - `js/warning-demo-media.mjs`：IndexedDB 图片保存、读取和删除，不处理业务状态。
-- `js/warning-demo-ui.js`：三端 DOM 渲染、表单校验、弹窗/抽屉、时间线和事件动作绑定。
+- `js/warning-demo-ui.mjs`：三端 DOM 渲染、表单校验、弹窗/抽屉、时间线和事件动作绑定。
 - `server/roof-risk-repository.js`：提供基于真实标准化特征的相似案例查询，不保存演示业务状态。
 - `server.js`：新增只读相似案例 API，沿用认证和错误响应约定。
 
