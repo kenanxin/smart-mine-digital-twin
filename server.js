@@ -371,6 +371,17 @@ function createAppServer(options = {}) {
         return;
       }
 
+      if (pathname === '/api/roof-risk/similar-cases') {
+        assertMethod(req, ['GET']);
+        const recordId = requestUrl.searchParams.get('record_id');
+        if (!recordId) {
+          throw new RoofRiskRepositoryError('RECORD_ID_REQUIRED', 'record_id is required', 400);
+        }
+        const limit = Number(requestUrl.searchParams.get('limit') || 3);
+        sendJson(res, repository.findSimilarCases(recordId, limit));
+        return;
+      }
+
       if (pathname === '/api/roof-risk/expert-advice') {
         assertMethod(req, ['POST']);
         if (!['expert', 'super_admin'].includes(session.user.role)) {

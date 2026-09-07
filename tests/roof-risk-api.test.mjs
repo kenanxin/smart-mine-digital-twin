@@ -126,6 +126,27 @@ test('record evaluation returns precomputed model output and rejects unknown ids
   });
 });
 
+test('similar-case endpoint returns authenticated real-data matches and validates ids', async () => {
+  await withServer(async (baseUrl, cookie) => {
+    const matched = await requestJson(
+      `${baseUrl}/api/roof-risk/similar-cases?record_id=REC-202511101149-02909&limit=3`,
+      {},
+      cookie,
+    );
+    assert.equal(matched.response.status, 200);
+    assert.equal(matched.payload.cases.length, 3);
+    assert.equal(matched.payload.source_sha256, EXPECTED_SOURCE_HASH);
+
+    const required = await requestJson(`${baseUrl}/api/roof-risk/similar-cases`, {}, cookie);
+    assert.equal(required.response.status, 400);
+    assert.equal(required.payload.error.code, 'RECORD_ID_REQUIRED');
+
+    const missing = await requestJson(`${baseUrl}/api/roof-risk/similar-cases?record_id=missing`, {}, cookie);
+    assert.equal(missing.response.status, 404);
+    assert.equal(missing.payload.error.code, 'RECORD_NOT_FOUND');
+  });
+});
+
 test('closed-loop advancement cannot change source measurements', async () => {
   await withServer(async (baseUrl, cookie) => {
     const before = await requestJson(`${baseUrl}/api/roof-risk/current`, {}, cookie);

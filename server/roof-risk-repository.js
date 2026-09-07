@@ -575,6 +575,41 @@ function createRoofRiskRepository(artifact) {
       };
     },
 
+    findSimilarCases(recordId, requestedLimit = 3) {
+      const query = getRecord(recordId);
+      const numericLimit = Number.isFinite(Number(requestedLimit)) ? Math.trunc(Number(requestedLimit)) : 3;
+      const limit = Math.max(1, Math.min(10, numericLimit));
+      const cases = artifact.records
+        .filter((record) => record.id !== query.id)
+        .map((record) => {
+          const squaredDistance = record.standardized_values.reduce((sum, value, index) => (
+            sum + ((value - query.standardized_values[index]) ** 2)
+          ), 0);
+          const distance = Math.sqrt(squaredDistance);
+          return { record, distance };
+        })
+        .sort((left, right) => left.distance - right.distance || left.record.id.localeCompare(right.record.id))
+        .slice(0, limit)
+        .map(({ record, distance }) => ({
+          record_id: record.id,
+          timestamp: record.time,
+          device_id: record.device_id,
+          true_class: record.true_class,
+          predicted_class: record.predicted_class,
+          risk_score: record.risk_score,
+          distance: Number(distance.toFixed(6)),
+          similarity: Number((1 / (1 + distance)).toFixed(6)),
+        }));
+      return {
+        api_version: API_VERSION,
+        source: artifact.source.name,
+        source_sha256: artifact.source.sha256,
+        query_record_id: query.id,
+        method: 'euclidean_distance_on_7_standardized_features',
+        cases,
+      };
+    },
+
     advanceClosedLoop(action) {
       if (!['advance', 'archive', 'reset'].includes(action)) {
         throw new RoofRiskRepositoryError('INVALID_ACTION', `Unsupported closed-loop action: ${action}`, 400, { action });

@@ -117,3 +117,23 @@ test('replay frame rejects invalid indexes and clamps its history window', () =>
   assert.throws(() => repo.getReplayFrame(20_000, 48), /REPLAY_INDEX_OUT_OF_RANGE/);
   assert.ok(repo.getReplayFrame(500, 10_000).history.points.length <= 120);
 });
+
+test('similar-case search returns nearest traceable real records deterministically', () => {
+  const repo = createRoofRiskRepository(artifact);
+  const result = repo.findSimilarCases('REC-202511101149-02909', 3);
+  assert.equal(result.query_record_id, 'REC-202511101149-02909');
+  assert.equal(result.source_sha256, EXPECTED_SOURCE_HASH);
+  assert.equal(result.method, 'euclidean_distance_on_7_standardized_features');
+  assert.equal(result.cases.length, 3);
+  assert.ok(result.cases.every((item) => item.record_id !== result.query_record_id));
+  assert.ok(result.cases.every((item) => item.timestamp && item.true_class && Number.isFinite(item.similarity)));
+  assert.ok(result.cases.every((item, index, all) => index === 0 || all[index - 1].distance <= item.distance));
+  assert.deepEqual(repo.findSimilarCases(result.query_record_id, 3), result);
+});
+
+test('similar-case search rejects unknown ids and clamps result limits', () => {
+  const repo = createRoofRiskRepository(artifact);
+  assert.throws(() => repo.findSimilarCases('missing', 3), (error) => error.code === 'RECORD_NOT_FOUND');
+  assert.equal(repo.findSimilarCases('REC-202511101149-02909', 0).cases.length, 1);
+  assert.equal(repo.findSimilarCases('REC-202511101149-02909', 99).cases.length, 10);
+});
