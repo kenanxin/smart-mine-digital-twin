@@ -145,3 +145,30 @@ test('core monitoring uses a dense rail layout rather than a grid of metric card
   assert.match(css, /\.metric-rail \.env-item[^}]*border-bottom:/s);
   assert.match(css, /\.attention-summary/);
 });
+
+test('orange warning demo exposes accessible role-specific workflow surfaces', () => {
+  for (const id of [
+    'warningDemoLauncher', 'warningDemoStatus', 'warningDemoRail',
+    'enterpriseWarningDialog', 'enterpriseDisposalDrawer', 'enterpriseDisposalForm',
+    'regulatorDemoBanner', 'regulatorVerificationPanel', 'regulatorReviewForm',
+    'expertDemoEventStrip', 'expertSimilarCases', 'expertArchiveAction',
+  ]) {
+    assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1, `${id} must exist exactly once`);
+  }
+  assert.match(html, /id="enterpriseWarningDialog"[^>]*aria-labelledby="enterpriseWarningTitle"/);
+  assert.match(html, /id="enterpriseDisposalForm"[\s\S]*?<label[^>]*for="disposalMeasures"/);
+  assert.match(html, /id="disposalPhotos"[^>]*accept="image\/jpeg,image\/png,image\/webp"/);
+  assert.match(html, /id="regulatorReviewOpinion"/);
+  assert.match(html, /id="regulatorRectificationDeadline"/);
+  assert.match(html, /id="expertArchiveConclusion"/);
+});
+
+test('warning demo layout is bounded, in-flow for analysis, and does not resize Three.js', () => {
+  assert.match(css, /\.warning-demo-strip\s*\{[^}]*flex:\s*0 0 auto/s);
+  assert.match(css, /\.warning-demo-dialog\s*\{[^}]*max-height:\s*min\(/s);
+  assert.match(css, /\.warning-demo-drawer\s*\{[^}]*width:\s*min\(/s);
+  assert.match(css, /\.regulator-verification-panel\s*\{[^}]*position:\s*relative/s);
+  assert.match(css, /\.expert-demo-event\s*\{[^}]*position:\s*relative/s);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.doesNotMatch(css, /(?:linear|radial|conic|repeating-linear)-gradient\(/);
+});

@@ -45,6 +45,27 @@
   <!-- JS 动态渲染 -->
 </div>
 
+<!-- ============ 橙色预警三端协同演示 ============ -->
+<section class="warning-demo-strip" id="warningDemoStrip" aria-label="橙色预警三端协同演示">
+  <div class="warning-demo-identity">
+    <span>ORANGE WARNING · 演示事件</span>
+    <strong id="warningDemoStatus">尚未启动</strong>
+    <em id="warningDemoEventId">DEMO-ORANGE-001</em>
+  </div>
+  <div class="warning-demo-rail" id="warningDemoRail" aria-label="预警闭环进度">
+    <span data-demo-step="alert_triggered">模型预警</span><i></i>
+    <span data-demo-step="disposal_in_progress">确认处置</span><i></i>
+    <span data-demo-step="pending_review">提交工单</span><i></i>
+    <span data-demo-step="changes_requested">整改复提</span><i></i>
+    <span data-demo-step="verified">监管通过</span><i></i>
+    <span data-demo-step="archived">案例归档</span>
+  </div>
+  <div class="warning-demo-actions">
+    <button class="warning-demo-primary" id="warningDemoLauncher" type="button">启动橙色预警演示</button>
+    <button id="warningDemoReset" type="button" hidden>重置演示</button>
+  </div>
+</section>
+
 <!-- ============ 主体布局 ============ -->
 <div class="main-container enterprise-screen" id="enterprisePortal">
 
@@ -220,6 +241,54 @@
   </aside>
 </div>
 
+<dialog class="warning-demo-dialog" id="enterpriseWarningDialog" aria-labelledby="enterpriseWarningTitle">
+  <div class="warning-dialog-signal"><span>ORANGE</span><b>较大风险</b></div>
+  <div class="warning-dialog-body">
+    <span class="warning-demo-eyebrow">多元数据融合预警 · XGBoost</span>
+    <h2 id="enterpriseWarningTitle">监测1出现顶板较大风险</h2>
+    <p>老师真实监测样本触发橙色预警，请立即查看热点并进入补强支护处置。</p>
+    <div class="warning-dialog-metrics">
+      <div><span>综合风险</span><b id="enterpriseWarningScore">70</b></div>
+      <div><span>真实记录</span><b id="enterpriseWarningRecord">REC-202511101149-02909</b></div>
+      <div><span>模型置信度</span><b id="enterpriseWarningConfidence">--</b></div>
+    </div>
+    <div class="warning-dialog-evidence" id="enterpriseWarningEvidence">正在读取模型特征证据</div>
+    <div class="warning-dialog-actions">
+      <button id="warningDialogDismiss" type="button">稍后查看</button>
+      <button class="warning-demo-primary" id="warningDialogAcknowledge" type="button">查看热点并进入处置</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="warning-demo-drawer" id="enterpriseDisposalDrawer" aria-labelledby="enterpriseDisposalTitle">
+  <header>
+    <div><span class="warning-demo-eyebrow">ENTERPRISE DISPOSAL</span><h2 id="enterpriseDisposalTitle">现场补强支护处置</h2></div>
+    <button id="enterpriseDisposalClose" type="button" aria-label="关闭处置面板" title="关闭">×</button>
+  </header>
+  <div class="warning-drawer-source">
+    <span>触发依据</span><b>真实记录 REC-202511101149-02909 · 风险 70</b><em>teacher_roof_monitoring.csv</em>
+  </div>
+  <div class="warning-review-notice" id="enterpriseRectificationNotice" hidden></div>
+  <form id="enterpriseDisposalForm">
+    <label for="disposalMeasures">补强支护措施</label>
+    <textarea id="disposalMeasures" rows="4" required placeholder="填写加密锚索、复核支架初撑力等现场措施"></textarea>
+    <div class="warning-form-grid">
+      <div><label for="disposalWorkOrder">工单编号</label><input id="disposalWorkOrder" required value="GD-2026-0907-01"></div>
+      <div><label for="disposalResponsiblePerson">现场负责人</label><input id="disposalResponsiblePerson" required placeholder="姓名"></div>
+      <div><label for="disposalCompletedAt">处置完成时间</label><input id="disposalCompletedAt" type="datetime-local" required></div>
+    </div>
+    <label for="disposalPhotos">现场照片 <span>JPEG / PNG / WebP，最多4张，单张不超过5MB</span></label>
+    <input id="disposalPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple required>
+    <div class="warning-photo-list" id="enterprisePhotoList"><p>尚未选择现场照片</p></div>
+    <p class="warning-form-error" id="enterpriseDisposalError" role="alert"></p>
+    <div class="warning-dialog-actions">
+      <button id="enterpriseDisposalCancel" type="button">暂存并关闭</button>
+      <button class="warning-demo-primary" id="enterpriseDisposalSubmit" type="submit">提交处置工单</button>
+    </div>
+  </form>
+  <div class="warning-demo-timeline" id="enterpriseWarningTimeline" aria-label="企业端事件时间线"></div>
+</dialog>
+
 <section class="provenance-strip" id="enterpriseProvenance" aria-label="当前真实数据来源">
   <div><span>数据源</span><b id="enterpriseSourceName">读取中</b></div>
   <div><span>记录</span><b id="enterpriseRecordId">--</b></div>
@@ -287,6 +356,37 @@
       <span>重点督办事件</span>
     </div>
   </div>
+
+  <section class="regulator-verification-panel" id="regulatorVerificationPanel" aria-labelledby="regulatorVerificationTitle">
+    <header>
+      <div><span class="warning-demo-eyebrow">SUPERVISION · ORANGE</span><h3 id="regulatorVerificationTitle">橙色预警处置核验</h3></div>
+      <strong id="regulatorDemoBanner">等待企业端启动演示</strong>
+    </header>
+    <div class="regulator-verification-grid">
+      <div class="regulator-disposal-evidence">
+        <div class="warning-evidence-summary" id="regulatorDisposalSummary"><p>企业端尚未提交处置材料。</p></div>
+        <div class="warning-photo-list compact" id="regulatorPhotoList"><p>现场照片待上传</p></div>
+      </div>
+      <div class="warning-comparison" id="regulatorMonitoringComparison">
+        <article><span>预警触发真实记录</span><b>70</b><em>REC-202511101149-02909</em></article>
+        <i>4 分钟后</i>
+        <article><span>后续监测真实对照</span><b>45</b><em>REC-202511101153-02911</em></article>
+        <p>仅作核验对照，不代表工程措施的因果效果。</p>
+      </div>
+      <form id="regulatorReviewForm">
+        <label for="regulatorReviewOpinion">监管核验意见</label>
+        <textarea id="regulatorReviewOpinion" rows="3" required placeholder="填写工单、照片和后续监测对照的核验结论"></textarea>
+        <label for="regulatorRectificationDeadline">整改期限 <span>驳回时必填</span></label>
+        <input id="regulatorRectificationDeadline" type="datetime-local">
+        <p class="warning-form-error" id="regulatorReviewError" role="alert"></p>
+        <div class="regulator-review-actions">
+          <button id="regulatorRejectAction" type="button">驳回整改</button>
+          <button class="warning-demo-primary" id="regulatorApproveAction" type="button">核验通过</button>
+        </div>
+      </form>
+    </div>
+    <div class="warning-demo-timeline" id="regulatorWarningTimeline" aria-label="监管端事件时间线"></div>
+  </section>
 
   <div class="portal-grid regulator-grid">
     <section class="portal-card wide regulator-overview-card">
@@ -387,6 +487,33 @@
       <em class="model-audit-state unavailable" id="expertAuditState">等待真实数据</em>
     </div>
   </div>
+
+  <section class="expert-demo-event" id="expertDemoEventStrip" aria-labelledby="expertDemoEventTitle">
+    <header>
+      <div><span class="warning-demo-eyebrow">EVENT MECHANISM REVIEW</span><h3 id="expertDemoEventTitle">当前橙色预警事件机理复盘</h3></div>
+      <strong id="expertDemoClosureStatus">演示尚未启动</strong>
+    </header>
+    <div class="expert-demo-grid">
+      <article class="expert-demo-mechanism">
+        <span>风险等级分析</span>
+        <b id="expertDemoRiskLevel">较大风险 · 70</b>
+        <p id="expertDemoMechanism">等待真实记录的模型概率与主要特征证据。</p>
+        <div id="expertDemoProbabilities" class="expert-demo-probabilities"></div>
+      </article>
+      <article>
+        <span>真实历史相似案例</span>
+        <div class="expert-similar-cases" id="expertSimilarCases"><p>演示启动后，从 20,000 条老师真实样本中检索。</p></div>
+      </article>
+      <article class="expert-demo-archive">
+        <span>闭环与案例库</span>
+        <label for="expertArchiveConclusion">复盘结论</label>
+        <textarea id="expertArchiveConclusion" rows="3">本事件已完成企业处置与监管核验，建议纳入顶板较大风险复盘案例库。</textarea>
+        <button class="warning-demo-primary" id="expertArchiveAction" type="button">确认闭环并纳入案例库</button>
+        <p class="warning-form-error" id="expertArchiveError" role="alert"></p>
+      </article>
+    </div>
+    <div class="warning-demo-timeline" id="expertWarningTimeline" aria-label="智库端事件时间线"></div>
+  </section>
 
   <section class="expert-research-console" aria-label="智库端科研分析大屏">
     <nav class="expert-research-nav" id="expertResearchNav" aria-label="科研分析导航">
