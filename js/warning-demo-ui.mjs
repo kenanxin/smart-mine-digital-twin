@@ -300,7 +300,7 @@ export async function setupWarningDemo(options = {}) {
       notice.textContent = state.status === DEMO_STATES.CHANGES_REQUESTED
         ? `监管整改意见：${state.review.opinion}；期限：${formatTime(state.review.deadline)}` : '';
     }
-    if (state.disposal.submissionCount > 0) {
+    if (editable && state.disposal.submissionCount > 0) {
       const values = {
         disposalMeasures: state.disposal.measures,
         disposalWorkOrder: state.disposal.workOrder,
@@ -308,6 +308,11 @@ export async function setupWarningDemo(options = {}) {
         disposalCompletedAt: state.disposal.completedAt,
       };
       Object.entries(values).forEach(([id, value]) => { const input = element(id); if (input && document.activeElement !== input) input.value = value; });
+    } else if (!editable && state.disposal.submissionCount > 0) {
+      ['disposalMeasures', 'disposalWorkOrder', 'disposalResponsiblePerson', 'disposalCompletedAt'].forEach((id) => {
+        const input = element(id);
+        if (input && document.activeElement !== input) input.value = '';
+      });
     }
     if (user.role === 'enterprise' && state.status === DEMO_STATES.ALERT_TRIGGERED && shownAlertRevision !== state.revision) {
       shownAlertRevision = state.revision;
@@ -396,6 +401,10 @@ export async function setupWarningDemo(options = {}) {
     setText('enterpriseDisposalError', validation.valid ? '' : validation.message);
     if (!validation.valid) return;
     store.dispatch({ type: DEMO_ACTIONS.SUBMIT_DISPOSAL, actor, payload: draft });
+    ['disposalMeasures', 'disposalWorkOrder', 'disposalResponsiblePerson', 'disposalCompletedAt'].forEach((id) => {
+      const input = element(id);
+      if (input) input.value = '';
+    });
     closeDialog(element('enterpriseDisposalDrawer'));
   }
 

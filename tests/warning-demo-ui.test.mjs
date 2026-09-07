@@ -45,6 +45,14 @@ test('disposal draft validation preserves explicit evidence requirements', () =>
   }).valid, true);
 });
 
+test('submitted enterprise drafts clear after submission and only return for requested changes', () => {
+  const script = fs.readFileSync(new URL('../js/warning-demo-ui.mjs', import.meta.url), 'utf8');
+  assert.match(script, /if \(editable && state\.disposal\.submissionCount > 0\)/);
+  assert.match(script, /else if \(!editable && state\.disposal\.submissionCount > 0\)/);
+  assert.match(script, /store\.dispatch\(\{ type: DEMO_ACTIONS\.SUBMIT_DISPOSAL/);
+  assert.match(script, /input\.value = '';[\s\S]*?closeDialog\(element\('enterpriseDisposalDrawer'\)\)/);
+});
+
 test('expert advice context contains the local demo workflow without replacing model data', () => {
   let state = createInitialDemoState(now);
   state = reduceDemoState(state, { type: 'START_DEMO', actor: enterprise }, { now });
