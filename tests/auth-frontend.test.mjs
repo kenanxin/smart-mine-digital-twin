@@ -129,6 +129,13 @@ test('auth client owns role URLs, unauthorized redirects, logout, and action vis
   assert.doesNotMatch(script, /localStorage|sessionStorage/);
 });
 
+test('main application initializes the warning demo after authentication', () => {
+  const script = read('js/main.js');
+  assert.match(script, /setupWarningDemo/);
+  assert.match(script, /getWarningDemoAdviceContext/);
+  assert.match(script, /authenticatedUser/);
+});
+
 test('admin page protects the current super administrator and supports password reset', () => {
   const html = read('admin.html');
   const script = read('js/admin.js');

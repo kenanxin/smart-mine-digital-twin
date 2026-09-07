@@ -10,6 +10,7 @@ import { EQUIPMENT, METRICS, getMetricLevel, getMineState, updateMineState } fro
 import { mapRoofRiskViewModel, unavailableRoofRiskViewModel } from './roof-risk-view-model.mjs';
 import { authFetch, bootstrapAuthenticatedPortal } from './auth-client.mjs';
 import { createReplayController } from './roof-risk-replay-controller.mjs';
+import { destroyWarningDemo, getWarningDemoAdviceContext, refreshWarningDemoRisk, setupWarningDemo } from './warning-demo-ui.mjs';
 
 let activeEquipmentId = null;
 let lastEquipmentListSignature = '';
@@ -1365,6 +1366,7 @@ async function refreshRoofRiskApiStatus() {
       setText('diagnosisRecordContext', viewModel.provenance.recordId);
       renderExpertModel(viewModel);
       refreshClosedLoop(payload);
+      refreshWarningDemoRisk(payload);
     }
     initPortalCharts();
     if (!replayDisplayActive) {
@@ -1463,7 +1465,7 @@ async function generateExpertAdvice() {
         risk: payload.risk,
         model: payload.model_output,
         evidence: payload.feature_evidence,
-        closed_loop: payload.closed_loop,
+        closed_loop: getWarningDemoAdviceContext(payload.closed_loop),
       }),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1547,6 +1549,7 @@ async function initApp(authenticatedUser) {
   setupClosedLoopActions();
   setupExpertResearchActions();
   refreshExpertAdviceStatus();
+  await setupWarningDemo({ user: authenticatedUser, authFetch, onSourceSelected: refreshRoofRiskApiStatus });
   setupDisasterPanel();
   setupEquipmentFocus();
   await refreshRoofRiskApiStatus();
@@ -1568,6 +1571,7 @@ async function initApp(authenticatedUser) {
   window.addEventListener('resize', onResize);
   window.addEventListener('beforeunload', () => {
     replayController?.dispose();
+    destroyWarningDemo();
     disposeCharts();
   }, { once: true });
 
