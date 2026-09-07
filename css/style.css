@@ -2178,7 +2178,10 @@ body.portal-expert .expert-screen {
 
 .regulator-grid {
   display: grid;
+  flex: 0 0 auto;
   grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.35fr) minmax(300px, 0.9fr);
+  grid-auto-rows: max-content;
+  align-items: start;
   gap: 10px;
 }
 

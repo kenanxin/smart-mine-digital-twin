@@ -32,6 +32,12 @@ test('regulator and expert portals expose role-specific chart work surfaces', ()
   assert.doesNotMatch(html, /特征贡献/);
 });
 
+test('regulator dashboard rows grow with content instead of overlapping in Chrome', () => {
+  assert.match(css, /\.regulator-grid\s*\{[^}]*flex:\s*0 0 auto/s);
+  assert.match(css, /\.regulator-grid\s*\{[^}]*grid-auto-rows:\s*max-content/s);
+  assert.match(css, /\.regulator-grid\s*\{[^}]*align-items:\s*start/s);
+});
+
 test('UI uses industrial tokens without CSS gradients and defines responsive stable chart sizes', () => {
   assert.match(css, /--telemetry-cyan:\s*#32c7d9/i);
   assert.match(css, /--risk-red:\s*#f05b5b/i);
