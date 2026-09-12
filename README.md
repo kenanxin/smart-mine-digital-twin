@@ -10,6 +10,7 @@
 - 顶板风险场：支持应力场、位移场和综合风险场切换。
 - 六阶段灾变演示：覆盖正常监测、应力集中、离层扩展、支护异常、垮落预警、应急处置。
 - 多角色协同闭环：企业端负责现场监测与处置，监管端负责区域态势和闭环督办，智库端负责模型解释和复盘，只读端用于受限查看，超级管理员负责账户与权限管理。
+- 算法预警与六智能体研判：XGBoost 负责 A1 感知预警，随后按 A2 知识检索 → A3 调度决策 → A5 资源评估 → A4 协同管控 → A6 反思迭代执行可审计状态流转。
 - 统一接口：RoofRisk API v1 统一真实输入、四级概率、综合风险、特征证据、预警事件和闭环状态。
 - 模型审计：智库端并列展示真实标签、XGBoost 预测、置信度、模型准确率、记录号与数据哈希。
 
@@ -81,6 +82,9 @@ POST /api/roof-risk/evaluate  # body: { "record_id": "REC-..." }
 GET  /api/roof-risk/events
 POST /api/roof-risk/select
 POST /api/roof-risk/closed-loop/advance
+GET  /api/multi-agent/status
+POST /api/multi-agent/run      # body: { "record_id": "REC-..." }
+POST /api/multi-agent/reflect  # 基于运行结果和现场反馈生成定向返回建议
 ```
 
 所有 `/api/roof-risk/*` 接口都要求有效登录会话。认证接口为：
@@ -106,6 +110,21 @@ docs/api/roof-risk-api-v1.md
 -> RoofRisk API v1 标准 JSON
 -> 三维孪生展示 / 企业端 / 监管端 / 智库端 / 只读端
 ```
+
+多智能体决策链路：
+
+```text
+真实CSV + XGBoost四级预测
+-> A1感知预警
+-> A2知识检索
+-> A3调度决策
+-> A5资源评估
+-> A4协同管控草案（dry-run，等待人工确认）
+-> A6反思迭代（闭环或建议定向返回）
+-> 三端人员执行、核验与复盘
+```
+
+六个 Agent 是机器研判链，企业端、监管端、智库端是人员业务链，两者不能混称。A2 返回的是七维标准化特征下的数据相似记录，不等同于已核验事故案例；A3—A6 当前属于规则辅助研判，不代表生产级自动控制。详细接口见 `docs/api/multi-agent-workflow-api.md`。
 
 ## 比赛提交资料
 
