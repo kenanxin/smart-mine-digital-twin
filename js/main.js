@@ -11,6 +11,7 @@ import { mapRoofRiskViewModel, unavailableRoofRiskViewModel } from './roof-risk-
 import { authFetch, bootstrapAuthenticatedPortal } from './auth-client.mjs';
 import { createReplayController } from './roof-risk-replay-controller.mjs';
 import { destroyWarningDemo, getWarningDemoAdviceContext, refreshWarningDemoRisk, setupWarningDemo } from './warning-demo-ui.mjs';
+import { setupMultiAgentWorkflow } from './multi-agent-workflow-ui.mjs';
 
 let activeEquipmentId = null;
 let lastEquipmentListSignature = '';
@@ -1548,6 +1549,9 @@ async function initApp(authenticatedUser) {
   setupRoofFieldControls();
   setupClosedLoopActions();
   setupExpertResearchActions();
+  if (authenticatedUser.role === 'expert') {
+    setupMultiAgentWorkflow({ authFetch, getCurrentPayload: () => latestRoofRiskApiPayload });
+  }
   refreshExpertAdviceStatus();
   await setupWarningDemo({ user: authenticatedUser, authFetch, onSourceSelected: refreshRoofRiskApiStatus });
   setupDisasterPanel();

@@ -519,6 +519,7 @@
     <nav class="expert-research-nav" id="expertResearchNav" aria-label="科研分析导航">
       <span class="research-nav-brand">ROOF LAB <em>01</em></span>
       <a href="#expertResearchSummary">数据概览</a>
+      <a href="#multiAgentWorkbench">智能体研判</a>
       <a href="#expertMechanismHeatmap">机理关联</a>
       <a href="#expertViolinChart">分布研究</a>
       <a href="#expertExplanation">模型解释</a>
@@ -541,6 +542,37 @@
         <div class="research-stat"><span>异常证据项</span><b id="researchEvidenceCount">--</b><em>当前记录标准化偏离</em></div>
         <div class="research-stat"><span>模型准确率</span><b id="researchAccuracy">--</b><em id="researchF1">Macro-F1 --</em></div>
       </div>
+      <section class="multi-agent-workbench" id="multiAgentWorkbench" aria-labelledby="multiAgentTitle">
+        <header class="multi-agent-head">
+          <div>
+            <span class="research-eyebrow">XGBOOST WARNING × SIX-AGENT ORCHESTRATION</span>
+            <h4 id="multiAgentTitle">算法预警 × 多智能体协同研判</h4>
+            <p>真实CSV与XGBoost负责风险识别，六智能体负责知识检索、方案、资源、协同和反思流转。</p>
+          </div>
+          <div class="multi-agent-actions">
+            <span id="multiAgentSource">等待读取接入状态</span>
+            <button id="runMultiAgentWorkflow" type="button">运行六智能体研判</button>
+          </div>
+        </header>
+        <div class="multi-agent-provenance">
+          <span>感知后端 <b>teacher_real_csv_xgboost</b></span>
+          <span>节点顺序 <b>A1 → A2 → A3 → A5 → A4 → A6</b></span>
+          <span>控制边界 <b>等待人工确认 · DRY-RUN</b></span>
+        </div>
+        <div class="multi-agent-rail" id="multiAgentRail" aria-label="六智能体状态机">
+          <button type="button" data-agent-id="A1"><b>A1</b><span>感知预警</span><em>等待运行</em></button>
+          <button type="button" data-agent-id="A2"><b>A2</b><span>知识检索</span><em>等待运行</em></button>
+          <button type="button" data-agent-id="A3"><b>A3</b><span>调度决策</span><em>等待运行</em></button>
+          <button type="button" data-agent-id="A5"><b>A5</b><span>资源评估</span><em>等待运行</em></button>
+          <button type="button" data-agent-id="A4"><b>A4</b><span>协同管控</span><em>等待人工确认</em></button>
+          <button type="button" data-agent-id="A6"><b>A6</b><span>反思迭代</span><em>等待运行</em></button>
+        </div>
+        <div class="multi-agent-detail" id="multiAgentDetail">
+          <div><span>当前节点</span><b>尚未运行</b></div>
+          <p>点击“运行六智能体研判”，系统将向后端提交当前真实记录并展示服务器返回的执行状态。</p>
+        </div>
+        <p class="multi-agent-boundary" id="multiAgentBoundary">真实性边界：A1使用现有XGBoost结果；A2检索的是数据相似记录；A3—A6属于规则辅助研判，不代表生产级自动控制。</p>
+      </section>
       <div class="expert-research-grid">
         <section class="research-panel panel-distribution"><header><strong>风险等级分布</strong><span>全量真实样本</span></header><div class="research-chart" id="expertDistributionChart" role="img" aria-label="老师真实数据风险等级分布"></div></section>
         <section class="research-panel panel-contribution"><header><strong>指标贡献度</strong><span>当前记录证据排序</span></header><div class="research-chart" id="expertContributionChart" role="img" aria-label="当前风险指标贡献度"></div></section>

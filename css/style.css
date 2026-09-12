@@ -3012,6 +3012,34 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
 .research-stat em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .risk-stat { border-left: 3px solid #e8a94a; background: #1b1811; }
 .risk-stat b { color: #f0bc66; }
+.multi-agent-workbench { margin: 0 0 14px; overflow: hidden; border: 1px solid #33434a; background: #0e181d; }
+.multi-agent-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px 16px; border-bottom: 1px solid #293940; background: #142126; }
+.multi-agent-head h4 { margin-top: 5px; color: #f0f5f6; font: 500 18px/1.2 var(--font-display); letter-spacing: .6px; }
+.multi-agent-head p { max-width: 720px; margin-top: 6px; color: #82969e; font-size: 10px; line-height: 1.5; }
+.multi-agent-actions { display: grid; flex: 0 0 245px; justify-items: end; gap: 8px; }
+.multi-agent-actions span { color: #66cfc7; font: 9px/1.3 var(--font-mono); text-align: right; }
+.multi-agent-actions button { min-height: 32px; padding: 6px 12px; border: 1px solid #dba64b; background: #2a2115; color: #f3cd7c; font-size: 10px; cursor: pointer; }
+.multi-agent-actions button:disabled { opacity: .6; cursor: wait; }
+.multi-agent-provenance { display: flex; flex-wrap: wrap; gap: 8px 22px; padding: 9px 14px; border-bottom: 1px solid #26363d; color: #71858e; font: 9px/1.4 var(--font-mono); }
+.multi-agent-provenance b { color: #b8c8cd; font-weight: 500; }
+.multi-agent-rail { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; padding: 1px; background: #2a3940; }
+.multi-agent-rail button { position: relative; display: grid; min-width: 0; min-height: 82px; padding: 11px; border: 0; border-bottom: 2px solid transparent; background: #111c21; color: #82969e; text-align: left; cursor: pointer; }
+.multi-agent-rail button:not(:last-child)::after { position: absolute; z-index: 2; top: 31px; right: -5px; width: 8px; height: 8px; content: ''; border-top: 1px solid #71858d; border-right: 1px solid #71858d; background: #111c21; transform: rotate(45deg); }
+.multi-agent-rail b { color: #e6b65f; font: 700 13px/1 var(--font-mono); }
+.multi-agent-rail span { margin-top: 6px; color: #d2dee1; font-size: 10px; }
+.multi-agent-rail em { margin-top: 6px; overflow: hidden; color: #6f838c; font: normal 8px/1.2 var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.multi-agent-rail button[data-status="success"] { border-bottom-color: #45bfa8; }
+.multi-agent-rail button[data-status="waiting_human"] { border-bottom-color: #e5aa49; background: #1c1b15; }
+.multi-agent-rail button[data-status="needs_attention"] { border-bottom-color: #df7169; background: #211719; }
+.multi-agent-rail button[data-status="skipped"] { opacity: .55; }
+.multi-agent-rail button.selected { outline: 1px solid #5a7882; outline-offset: -2px; }
+.multi-agent-detail { display: grid; gap: 8px; min-height: 112px; padding: 13px 15px; background: #10191e; }
+.multi-agent-detail > div, .multi-agent-detail footer { display: flex; justify-content: space-between; gap: 12px; }
+.multi-agent-detail span { color: #72868e; font: 9px/1.3 var(--font-mono); }
+.multi-agent-detail b { color: #f0c76d; font-size: 10px; }
+.multi-agent-detail p, .multi-agent-detail li { color: #a8b9be; font-size: 10px; line-height: 1.5; }
+.multi-agent-detail ul { display: flex; flex-wrap: wrap; gap: 5px 16px; padding-left: 16px; }
+.multi-agent-boundary { padding: 8px 14px; border-top: 1px solid #2b393f; color: #70828a; font-size: 9px; line-height: 1.45; }
 .expert-research-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 270px; gap: 10px; }
 .research-panel { min-width: 0; min-height: 270px; overflow: hidden; border: 1px solid #29343a; background: #10191e; }
 .research-panel header, .research-explanation header, .research-advice header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 41px; padding: 9px 11px; border-bottom: 1px solid #29343a; }
@@ -3046,6 +3074,11 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   .panel-distribution, .panel-contribution, .panel-heatmap, .panel-violin, .panel-trend, .panel-cluster { grid-column: span 6; }
   .expert-research-summary { grid-template-columns: repeat(3, 1fr); }
   .research-lower-grid { grid-template-columns: 1fr; }
+  .multi-agent-head { align-items: flex-start; flex-direction: column; }
+  .multi-agent-actions { width: 100%; flex-basis: auto; justify-items: start; }
+  .multi-agent-actions span { text-align: left; }
+  .multi-agent-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .multi-agent-rail button:nth-child(3)::after { display: none; }
 }
 @media (max-width: 600px) {
   .expert-research-main { padding: 10px; }
@@ -3055,6 +3088,9 @@ body.portal-enterprise .core-monitoring-workbench .metric-rail {
   .expert-research-summary { grid-template-columns: repeat(2, 1fr); }
   .panel-distribution, .panel-contribution, .panel-heatmap, .panel-violin, .panel-trend, .panel-cluster { grid-column: span 12; }
   .explanation-layers { grid-template-columns: 1fr; }
+  .multi-agent-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .multi-agent-rail button:nth-child(2n)::after { display: none; }
+  .multi-agent-detail footer { align-items: flex-start; flex-direction: column; }
 }
 
 /* ============ 挑战杯答辩级视觉收口 ============ */
