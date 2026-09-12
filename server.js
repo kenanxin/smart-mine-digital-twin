@@ -17,6 +17,7 @@ const {
 } = require('./server/auth-service.js');
 const { createSupabaseAuthService } = require('./server/supabase-auth-service.js');
 const { createExpertAdviceService } = require('./server/expert-advice-service.js');
+const { createMultiAgentWorkflowService } = require('./server/multi-agent-workflow-service.js');
 
 const ROOT = __dirname;
 const DEFAULT_ARTIFACT_PATH = path.join(ROOT, 'data', 'roof-risk-dataset.json');
@@ -185,6 +186,7 @@ function createAppServer(options = {}) {
     })
     : createAuthService());
   const expertAdviceService = options.expertAdviceService || createExpertAdviceService();
+  const multiAgentWorkflowService = options.multiAgentWorkflowService || createMultiAgentWorkflowService(repository);
 
   return http.createServer(async (req, res) => {
     const requestUrl = new URL(req.url, 'http://localhost');
@@ -319,8 +321,9 @@ function createAppServer(options = {}) {
 
       const isApplicationShell = pathname === '/' || pathname === '/index.html';
       const isRoofRiskApi = pathname.startsWith('/api/roof-risk/');
-      if ((isApplicationShell || isRoofRiskApi) && !session) {
-        if (isRoofRiskApi) sendApiError(res, 401, 'AUTH_REQUIRED', '请先登录');
+      const isMultiAgentApi = pathname.startsWith('/api/multi-agent/');
+      if ((isApplicationShell || isRoofRiskApi || isMultiAgentApi) && !session) {
+        if (isRoofRiskApi || isMultiAgentApi) sendApiError(res, 401, 'AUTH_REQUIRED', '请先登录');
         else redirect(res, '/login');
         return;
       }
@@ -333,6 +336,35 @@ function createAppServer(options = {}) {
       if (pathname === '/api/roof-risk/current') {
         assertMethod(req, ['GET']);
         sendJson(res, repository.getCurrent());
+        return;
+      }
+
+      if (pathname === '/api/multi-agent/status') {
+        assertMethod(req, ['GET']);
+        sendJson(res, multiAgentWorkflowService.status());
+        return;
+      }
+
+      if (pathname === '/api/multi-agent/run') {
+        assertMethod(req, ['POST']);
+        const body = await readJsonBody(req);
+        if (typeof body.record_id !== 'string' || !body.record_id) {
+          throw new RoofRiskRepositoryError('RECORD_ID_REQUIRED', 'record_id is required', 400);
+        }
+        sendJson(res, multiAgentWorkflowService.run({
+          recordId: body.record_id,
+          resourceSnapshot: body.resource_snapshot,
+        }));
+        return;
+      }
+
+      if (pathname === '/api/multi-agent/reflect') {
+        assertMethod(req, ['POST']);
+        const body = await readJsonBody(req);
+        if (!body.run || typeof body.run !== 'object') {
+          throw new RoofRiskRepositoryError('WORKFLOW_RUN_REQUIRED', 'run is required', 400);
+        }
+        sendJson(res, multiAgentWorkflowService.reflect({ run: body.run, feedback: body.feedback || {} }));
         return;
       }
 

@@ -324,3 +324,34 @@ test('replay endpoints reject unauthenticated and invalid index requests', async
     assert.equal(invalid.payload.error.code, 'INVALID_REPLAY_INDEX');
   });
 });
+
+test('multi-agent API runs the six-agent graph from a traceable XGBoost record', async () => {
+  await withServer(async (baseUrl, cookie) => {
+    const status = await requestJson(`${baseUrl}/api/multi-agent/status`, {}, cookie);
+    assert.equal(status.response.status, 200);
+    assert.equal(status.payload.perception_backend, 'teacher_real_csv_xgboost');
+    assert.deepEqual(status.payload.node_order, ['A1', 'A2', 'A3', 'A5', 'A4', 'A6']);
+
+    const run = await requestJson(`${baseUrl}/api/multi-agent/run`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ record_id: 'REC-202511101149-02909' }),
+    }, cookie);
+    assert.equal(run.response.status, 200);
+    assert.equal(run.payload.algorithm.model, 'xgboost');
+    assert.equal(run.payload.nodes.length, 6);
+    assert.equal(run.payload.nodes[4].status, 'waiting_human');
+    assert.equal(run.payload.nodes[4].output.delivery_mode, 'dry_run');
+  });
+});
+
+test('multi-agent API authenticates requests and validates record input', async () => {
+  await withServer(async (baseUrl, cookie) => {
+    const anonymous = await requestJson(`${baseUrl}/api/multi-agent/status`);
+    assert.equal(anonymous.response.status, 401);
+    const invalid = await requestJson(`${baseUrl}/api/multi-agent/run`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
+    }, cookie);
+    assert.equal(invalid.response.status, 400);
+    assert.equal(invalid.payload.error.code, 'RECORD_ID_REQUIRED');
+  });
+});
